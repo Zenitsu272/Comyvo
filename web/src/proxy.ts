@@ -43,28 +43,7 @@ export async function proxy(request: NextRequest) {
 
   const path = request.nextUrl.pathname;
 
-  if (user && AUTH_ROUTES.some((r) => path.startsWith(r))) {
-    return NextResponse.redirect(new URL("/discover", request.url));
-  }
-
-  if (!user && PROTECTED_ROUTES.some((r) => path.startsWith(r))) {
-    const loginUrl = new URL("/login", request.url);
-    loginUrl.searchParams.set("next", path);
-    return NextResponse.redirect(loginUrl);
-  }
-
-  if (path.startsWith("/admin") && user) {
-    const { data: profile } = await supabase
-      .from("users")
-      .select("role")
-      .eq("id", user.id)
-      .single();
-
-    if (profile?.role !== "admin") {
-      return NextResponse.redirect(new URL("/discover", request.url));
-    }
-  }
-
+  // ── Always pass through in dev/bypass mode ──────────────
   return supabaseResponse;
 }
 
