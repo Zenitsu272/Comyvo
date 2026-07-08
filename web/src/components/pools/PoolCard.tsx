@@ -124,7 +124,9 @@ export default function PoolCard({ pool, onJoin, onLeave }: PoolCardProps) {
         <div className="ride-meta">
           <div>
             <span>Host</span>
-            <strong>{pool.host_roll ?? pool.host_name ?? "—"}</strong>
+            <Link href={`/profile/${pool.host_id}`} className="hover-teal" style={{ display: "block", color: "inherit", fontWeight: 700 }}>
+              {pool.host_roll ?? pool.host_name ?? "—"}
+            </Link>
           </div>
           <div>
             <span>Cost</span>

@@ -61,6 +61,7 @@ create table public.pools (
   notes               text,
   via_route           text, -- e.g. "Gandhipuram, Singanallur"
   luggage_capacity    text not null default 'any', -- 'any' | 'backpacks' | 'trolleys'
+  car_type            text not null default 'sedan', -- 'auto' | 'sedan' | 'suv'
   campus              text not null default 'Coimbatore',
   women_only          boolean default false,
   contact_visibility  contact_visibility default 'after_join',
@@ -86,8 +87,10 @@ create table public.pool_members (
   id        uuid primary key default uuid_generate_v4(),
   pool_id   uuid not null references public.pools(id) on delete cascade,
   user_id   uuid not null references public.users(id) on delete cascade,
+  seat_no   int not null, -- 1-indexed seat position
   joined_at timestamptz default now(),
-  unique(pool_id, user_id)
+  unique(pool_id, user_id),
+  unique(pool_id, seat_no) -- ensure no two riders book the same seat
 );
 
 -- Trigger: decrement available_seats on join
@@ -285,6 +288,7 @@ select
   p.notes,
   p.via_route,
   p.luggage_capacity,
+  p.car_type,
   p.campus,
   p.women_only,
   p.contact_visibility,

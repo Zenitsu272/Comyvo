@@ -13,8 +13,9 @@ export default function CreatePage() {
     from_location: "Campus Main Gate",
     to_location: "Coimbatore Railway Station",
     via_route: "",
+    car_type: "sedan",
     departure_at: "",
-    total_seats: "3",
+    total_seats: "4",
     cost_per_person: "150",
     notes: "",
     campus: "Coimbatore",
@@ -25,10 +26,22 @@ export default function CreatePage() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
-    setForm((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? (e.target as HTMLInputElement).checked : value,
-    }));
+
+    if (name === "car_type") {
+      let seats = "3"; // auto
+      if (value === "sedan") seats = "4";
+      if (value === "suv") seats = "6";
+      setForm((prev) => ({
+        ...prev,
+        car_type: value,
+        total_seats: seats,
+      }));
+    } else {
+      setForm((prev) => ({
+        ...prev,
+        [name]: type === "checkbox" ? (e.target as HTMLInputElement).checked : value,
+      }));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -94,8 +107,16 @@ export default function CreatePage() {
                 <input id="departure_at" name="departure_at" type="datetime-local" value={form.departure_at} onChange={handleChange} required />
               </label>
               <label>
-                <span>Total seats</span>
-                <input id="total_seats" name="total_seats" type="number" min="1" max="8" value={form.total_seats} onChange={handleChange} />
+                <span>Vehicle Type</span>
+                <select id="car_type" name="car_type" value={form.car_type} onChange={handleChange}>
+                  <option value="sedan">🚗 Sedan (UberGo/Cab – 3 passengers)</option>
+                  <option value="suv">🚘 SUV (UberXL/Cab – 6 passengers)</option>
+                  <option value="auto">🛺 Auto / TukTuk (3 passengers)</option>
+                </select>
+              </label>
+              <label>
+                <span>Available Seats (Auto-Set)</span>
+                <input id="total_seats" name="total_seats" type="number" value={form.total_seats} readOnly style={{ background: "var(--panel-soft)", color: "var(--muted)", cursor: "not-allowed" }} />
               </label>
               <label>
                 <span>Cost per person (₹)</span>

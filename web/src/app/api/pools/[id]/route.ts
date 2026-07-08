@@ -44,7 +44,7 @@ export async function GET(_: Request, { params }: Params) {
   // Get members (roll numbers, no phone)
   const { data: members } = await supabase
     .from("pool_members")
-    .select("user_id, users(roll_number, full_name)")
+    .select("seat_no, user_id, users(roll_number, full_name)")
     .eq("pool_id", id);
 
   return NextResponse.json({
@@ -66,7 +66,7 @@ export async function PUT(request: Request, { params }: Params) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await request.json();
-  const allowed = ["from_location", "to_location", "via_route", "departure_at", "total_seats", "cost_per_person", "notes", "women_only", "contact_visibility", "status"];
+  const allowed = ["from_location", "to_location", "via_route", "car_type", "departure_at", "total_seats", "cost_per_person", "notes", "women_only", "contact_visibility", "status"];
   const updates: Record<string, unknown> = {};
   for (const key of allowed) {
     if (key in body) updates[key] = body[key];

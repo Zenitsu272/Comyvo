@@ -3,17 +3,25 @@ import { createClient } from "@/lib/supabase/server";
 
 type Params = { params: Promise<{ id: string }> };
 
-// POST /api/pools/:id/join
-export async function POST(_: Request, { params }: Params) {
+// POST /api/pools/:id/join — join pool with specific seat number selection
+export async function POST(request: Request, { params }: Params) {
   const { id } = await params;
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  // Read seat_no from request
+  const body = await request.json().catch(() => ({}));
+  const { seat_no } = body;
+
+  if (!seat_no || Number(seat_no) < 1) {
+    return NextResponse.json({ error: "Please select a specific seat to book." }, { status: 400 });
+  }
+
   // Check pool
   const { data: pool } = await supabase
     .from("pools")
-    .select("available_seats, status, host_id, women_only, from_location, to_location")
+    .select("available_seats, total_seats, status, host_id, women_only, from_location, to_location")
     .eq("id", id)
     .single();
 
@@ -21,6 +29,9 @@ export async function POST(_: Request, { params }: Params) {
   if (pool.host_id === user.id) return NextResponse.json({ error: "You can't join your own pool." }, { status: 400 });
   if (pool.status !== "active") return NextResponse.json({ error: "Pool is not available." }, { status: 400 });
   if (pool.available_seats <= 0) return NextResponse.json({ error: "Pool is full." }, { status: 400 });
+  if (Number(seat_no) > pool.total_seats) {
+    return NextResponse.json({ error: `Seat number must be between 1 and ${pool.total_seats}` }, { status: 400 });
+  }
 
   // Women-only check
   if (pool.women_only) {
@@ -30,13 +41,18 @@ export async function POST(_: Request, { params }: Params) {
     }
   }
 
-  // Join
+  // Join and book seat
   const { error } = await supabase
     .from("pool_members")
-    .insert({ pool_id: id, user_id: user.id });
+    .insert({ pool_id: id, user_id: user.id, seat_no: Number(seat_no) });
 
   if (error) {
-    if (error.code === "23505") return NextResponse.json({ error: "You have already joined this pool." }, { status: 400 });
+    if (error.code === "23505") {
+      if (error.message.includes("seat_no")) {
+        return NextResponse.json({ error: "This seat has already been taken by another member. Please choose another seat." }, { status: 400 });
+      }
+      return NextResponse.json({ error: "You have already joined this pool." }, { status: 400 });
+    }
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
@@ -65,6 +81,7 @@ export async function POST(_: Request, { params }: Params) {
               <ul>
                 <li><strong>Rider:</strong> ${joinerRes.data?.full_name || 'Verified Student'}</li>
                 <li><strong>Roll Number:</strong> ${joinerRes.data?.roll_number || '—'}</li>
+                <li><strong>Seat Booked:</strong> Seat #${seat_no}</li>
                 <li><strong>Route:</strong> ${pool.from_location} &rarr; ${pool.to_location}</li>
               </ul>
               <p><a href="${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/my-pools">Click here to view your pool members and contact details</a>.</p>

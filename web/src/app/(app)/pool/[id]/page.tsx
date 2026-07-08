@@ -6,11 +6,12 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { toast } from "@/components/ui/Toast";
 import Modal from "@/components/ui/Modal";
 import DiscussionBoard from "@/components/pools/DiscussionBoard";
+import SeatingChart from "@/components/pools/SeatingChart";
 import { formatDeparture } from "@/lib/utils";
-import { ShieldCheck, AlertTriangle } from "lucide-react";
 
 interface Member {
   user_id: string;
+  seat_no: number;
   users: { roll_number: string | null; full_name: string | null } | null;
 }
 
@@ -20,6 +21,7 @@ interface PoolDetail extends Pool {
   campus: string | null;
   viewer_id?: string;
   luggage_capacity?: string;
+  car_type?: string;
 }
 
 export default function PoolDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -28,30 +30,42 @@ export default function PoolDetailPage({ params }: { params: Promise<{ id: strin
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
 
+  // Seating confirmation dialog
+  const [selectedSeat, setSelectedSeat] = useState<number | null>(null);
+
   // Report Modal state
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [reportReason, setReportReason] = useState("Incorrect phone number");
   const [reportDetails, setReportDetails] = useState("");
   const [submittingReport, setSubmittingReport] = useState(false);
 
+  const fetchPool = async () => {
+    const res = await fetch(`/api/pools/${id}`);
+    if (!res.ok) { setLoading(false); return; }
+    setPool(await res.json());
+    setLoading(false);
+  };
+
   useEffect(() => {
-    const fetchPool = async () => {
-      const res = await fetch(`/api/pools/${id}`);
-      if (!res.ok) { setLoading(false); return; }
-      setPool(await res.json());
-      setLoading(false);
-    };
     fetchPool();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const handleJoin = async () => {
+    if (selectedSeat === null) return;
     setActionLoading(true);
-    const res = await fetch(`/api/pools/${id}/join`, { method: "POST" });
+    const res = await fetch(`/api/pools/${id}/join`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ seat_no: selectedSeat })
+    });
     const data = await res.json();
     setActionLoading(false);
+    setSelectedSeat(null);
+
     if (!res.ok) { toast(data.error, "error"); return; }
-    toast("Joined the pool!", "success");
-    setPool((p) => p ? { ...p, is_member: true, available_seats: p.available_seats - 1 } : p);
+    toast("Seat booked successfully! Joined the pool.", "success");
+    fetchPool(); // Reload full seating allocation
   };
 
   const handleLeave = async () => {
@@ -61,7 +75,7 @@ export default function PoolDetailPage({ params }: { params: Promise<{ id: strin
     setActionLoading(false);
     if (!res.ok) { toast(data.error, "error"); return; }
     toast("Left the pool.", "info");
-    setPool((p) => p ? { ...p, is_member: false, available_seats: p.available_seats + 1 } : p);
+    fetchPool();
   };
 
   const handleReportSubmit = async () => {
@@ -173,11 +187,26 @@ export default function PoolDetailPage({ params }: { params: Promise<{ id: strin
               </div>
             )}
 
+            {/* Seating Map */}
+            <SeatingChart
+              carType={pool.car_type ?? "sedan"}
+              hostName={pool.host_roll ?? pool.host_name ?? "Host"}
+              hostRoll={pool.host_roll}
+              hostId={pool.host_id}
+              members={pool.members}
+              isMember={!!pool.is_member}
+              isHost={!!pool.is_host}
+              onSelectSeat={(seatNo) => setSelectedSeat(seatNo)}
+              actionLoading={actionLoading}
+            />
+
             {/* Meta */}
-            <div className="ride-meta">
+            <div className="ride-meta" style={{ marginTop: 24 }}>
               <div>
                 <span>Host</span>
-                <strong>{pool.host_roll ?? pool.host_name ?? "—"}</strong>
+                <a href={`/profile/${pool.host_id}`} className="hover-teal" style={{ display: "block", color: "inherit", fontWeight: 700 }}>
+                  {pool.host_roll ?? pool.host_name ?? "—"}
+                </a>
               </div>
               <div>
                 <span>Cost</span>
@@ -197,22 +226,18 @@ export default function PoolDetailPage({ params }: { params: Promise<{ id: strin
             )}
 
             {/* Actions */}
-            {!pool.is_host && (
-              <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
-                {pool.is_member ? (
-                  <button className="btn-danger btn" onClick={handleLeave} disabled={actionLoading}>
-                    {actionLoading ? "Leaving…" : "Leave pool"}
-                  </button>
-                ) : (
-                  <button className="btn-solid btn" onClick={handleJoin} disabled={actionLoading || pool.available_seats === 0}>
-                    {actionLoading ? "Joining…" : pool.available_seats === 0 ? "Full" : "Join pool"}
-                  </button>
-                )}
+            <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
+              {pool.is_member && (
+                <button className="btn-danger btn" onClick={handleLeave} disabled={actionLoading}>
+                  {actionLoading ? "Leaving…" : "Leave pool"}
+                </button>
+              )}
+              {!pool.is_host && (
                 <button className="btn-ghost btn" onClick={() => setReportModalOpen(true)}>
                   Report Pool / Host
                 </button>
-              </div>
-            )}
+              )}
+            </div>
 
             {/* ── Group discussion board (Only visible for host and members) ── */}
             {(pool.is_member || pool.is_host) && pool.viewer_id && (
@@ -222,7 +247,7 @@ export default function PoolDetailPage({ params }: { params: Promise<{ id: strin
 
           {/* Aside */}
           <div className="pool-detail-aside">
-            {/* Members */}
+            {/* Members List */}
             <div style={{ padding: 20, border: "1px solid var(--line)", borderRadius: 14, background: "var(--panel)" }}>
               <h3>Members ({pool.members.length}/{pool.total_seats})</h3>
               {pool.members.length === 0 ? (
@@ -230,11 +255,11 @@ export default function PoolDetailPage({ params }: { params: Promise<{ id: strin
               ) : (
                 <div className="member-strip" style={{ flexWrap: "wrap", gap: 8 }}>
                   {pool.members.map((m) => (
-                    <div key={m.user_id} title={m.users?.full_name ?? ""}>
+                    <a key={m.user_id} href={`/profile/${m.user_id}`} title={m.users?.full_name ?? "View profile"}>
                       <span className="member-avatar">
                         {(m.users?.full_name ?? "?").split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase()}
                       </span>
-                    </div>
+                    </a>
                   ))}
                 </div>
               )}
@@ -261,6 +286,18 @@ export default function PoolDetailPage({ params }: { params: Promise<{ id: strin
           </div>
         </div>
       </div>
+
+      {/* Seating Confirmation Modal */}
+      {selectedSeat !== null && (
+        <Modal
+          title="Confirm Seat Booking"
+          message={`Are you sure you want to book Seat #${selectedSeat} in this pool?`}
+          confirmLabel="Book Seat"
+          onConfirm={handleJoin}
+          onCancel={() => setSelectedSeat(null)}
+          loading={actionLoading}
+        />
+      )}
 
       {reportModalOpen && (
         <Modal

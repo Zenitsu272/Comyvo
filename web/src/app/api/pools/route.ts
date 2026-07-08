@@ -77,7 +77,7 @@ export async function POST(request: Request) {
 
   const body = await request.json();
   const {
-    from_location, to_location, via_route, departure_at,
+    from_location, to_location, via_route, car_type, departure_at,
     total_seats, cost_per_person, notes,
     campus, women_only, contact_visibility,
   } = body;
@@ -93,6 +93,7 @@ export async function POST(request: Request) {
       from_location,
       to_location,
       via_route: via_route || null,
+      car_type: car_type || "sedan",
       departure_at,
       total_seats: Number(total_seats),
       available_seats: Number(total_seats),
