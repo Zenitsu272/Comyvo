@@ -27,6 +27,7 @@ create table public.users (
   department    text,
   campus        text default 'Coimbatore',
   gender        text, -- 'male' | 'female' | 'other' | null
+  year_of_joining int,
   role          user_role default 'student',
   created_at    timestamptz default now(),
   updated_at    timestamptz default now()

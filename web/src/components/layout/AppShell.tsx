@@ -9,6 +9,7 @@ const NAV_ITEMS = [
   { href: "/discover", label: "Discover", icon: "D" },
   { href: "/create", label: "Create", icon: "C" },
   { href: "/my-pools", label: "My Pools", icon: "M" },
+  { href: "/settings", label: "Settings", icon: "S" },
   { href: "/admin", label: "Admin", icon: "A", adminOnly: true },
 ];
 
@@ -79,13 +80,13 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
           <div className="rail-footer">
             {user && (
-              <button className="rail-user" onClick={handleSignOut} title="Sign out">
+              <Link className="rail-user" href="/settings" title="View settings">
                 <span className="rail-user-avatar">{initials}</span>
                 <div className="rail-user-info">
                   <strong>{user.full_name ?? "—"}</strong>
                   <small>{user.roll_number ?? "Complete profile"}</small>
                 </div>
-              </button>
+              </Link>
             )}
             <div className="rail-card">
               <span className="live-dot" />

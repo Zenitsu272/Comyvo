@@ -1,12 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import { Pool } from "@/components/pools/PoolCard";
-import PoolCard from "@/components/pools/PoolCard";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { toast } from "@/components/ui/Toast";
+import Modal from "@/components/ui/Modal";
 import { formatDeparture } from "@/lib/utils";
-import { use } from "react";
 
 interface Member {
   user_id: string;
@@ -24,6 +23,12 @@ export default function PoolDetailPage({ params }: { params: Promise<{ id: strin
   const [pool, setPool] = useState<PoolDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+
+  // Report Modal state
+  const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [reportReason, setReportReason] = useState("Incorrect phone number");
+  const [reportDetails, setReportDetails] = useState("");
+  const [submittingReport, setSubmittingReport] = useState(false);
 
   useEffect(() => {
     const fetchPool = async () => {
@@ -53,6 +58,31 @@ export default function PoolDetailPage({ params }: { params: Promise<{ id: strin
     if (!res.ok) { toast(data.error, "error"); return; }
     toast("Left the pool.", "info");
     setPool((p) => p ? { ...p, is_member: false, available_seats: p.available_seats + 1 } : p);
+  };
+
+  const handleReportSubmit = async () => {
+    if (!reportDetails.trim()) {
+      toast("Please add report description.", "error");
+      return;
+    }
+    setSubmittingReport(true);
+    const res = await fetch("/api/reports", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        reported_user_id: pool?.host_id,
+        pool_id: id,
+        reason: `${reportReason}: ${reportDetails}`,
+      }),
+    });
+    setSubmittingReport(false);
+    if (!res.ok) {
+      toast("Failed to submit report.", "error");
+      return;
+    }
+    toast("Report filed successfully. Admins will review.", "success");
+    setReportModalOpen(false);
+    setReportDetails("");
   };
 
   if (loading) {
@@ -159,8 +189,8 @@ export default function PoolDetailPage({ params }: { params: Promise<{ id: strin
                     {actionLoading ? "Joining…" : pool.available_seats === 0 ? "Full" : "Join pool"}
                   </button>
                 )}
-                <button className="btn-ghost btn" onClick={() => toast("Report submitted. Admins will review it.", "info")}>
-                  Report
+                <button className="btn-ghost btn" onClick={() => setReportModalOpen(true)}>
+                  Report Pool / Host
                 </button>
               </div>
             )}
@@ -206,6 +236,44 @@ export default function PoolDetailPage({ params }: { params: Promise<{ id: strin
           </div>
         </div>
       </div>
+
+      {reportModalOpen && (
+        <Modal
+          title="Report this pool or host"
+          message="Help keep the campus safe. Let us know what is wrong."
+          confirmLabel="Submit Report"
+          variant="danger"
+          onConfirm={handleReportSubmit}
+          onCancel={() => setReportModalOpen(false)}
+          loading={submittingReport}
+        >
+          <div style={{ display: "grid", gap: 12, margin: "14px 0" }}>
+            <label style={{ display: "grid", gap: 4 }}>
+              <span>Reason</span>
+              <select
+                value={reportReason}
+                onChange={(e) => setReportReason(e.target.value)}
+              >
+                <option value="Incorrect phone number">Incorrect phone number</option>
+                <option value="Host no-show">Host did not show up</option>
+                <option value="Inappropriate behaviour">Inappropriate behavior</option>
+                <option value="Scam / Overpricing">Scam or Overpricing</option>
+                <option value="Other">Other</option>
+              </select>
+            </label>
+            <label style={{ display: "grid", gap: 4 }}>
+              <span>Additional details</span>
+              <textarea
+                placeholder="Please describe the issue in detail..."
+                value={reportDetails}
+                onChange={(e) => setReportDetails(e.target.value)}
+                rows={3}
+                required
+              />
+            </label>
+          </div>
+        </Modal>
+      )}
     </>
   );
 }

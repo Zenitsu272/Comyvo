@@ -1,12 +1,19 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-// Routes that require authentication
 const PROTECTED_ROUTES = ["/discover", "/create", "/my-pools", "/pool", "/admin"];
-// Routes that redirect authenticated users away
 const AUTH_ROUTES = ["/login", "/signup"];
 
 export async function proxy(request: NextRequest) {
+  // ── Skip if Supabase is not configured yet ──────────────
+  if (
+    !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  ) {
+    return NextResponse.next({ request });
+  }
+
+
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -36,19 +43,16 @@ export async function proxy(request: NextRequest) {
 
   const path = request.nextUrl.pathname;
 
-  // Redirect authenticated users away from auth pages
   if (user && AUTH_ROUTES.some((r) => path.startsWith(r))) {
     return NextResponse.redirect(new URL("/discover", request.url));
   }
 
-  // Redirect unauthenticated users to login
   if (!user && PROTECTED_ROUTES.some((r) => path.startsWith(r))) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("next", path);
     return NextResponse.redirect(loginUrl);
   }
 
-  // Admin route: check role in DB
   if (path.startsWith("/admin") && user) {
     const { data: profile } = await supabase
       .from("users")
@@ -69,3 +73,4 @@ export const config = {
     "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };
+

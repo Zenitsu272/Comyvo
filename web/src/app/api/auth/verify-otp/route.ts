@@ -17,6 +17,7 @@ export async function POST(request: Request) {
   });
 
   if (error) {
+    console.error("Supabase OTP Verify Error:", error);
     return NextResponse.json({ error: "Invalid or expired code." }, { status: 400 });
   }
 

@@ -9,74 +9,187 @@ export const metadata: Metadata = {
 
 export default function LandingPage() {
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
-      {/* ── Nav ── */}
-      <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "20px 48px", borderBottom: "1px solid var(--line)", background: "var(--panel)" }}>
-        <div className="brand" style={{ margin: 0 }}>
-          <span className="brand-mark">C</span>
-          <span>
-            <strong>Commuto</strong>
-            <small>Campus carpool</small>
+    <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column" }}>
+      {/* ── Navbar ── */}
+      <header style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        padding: "20px 48px",
+        borderBottom: "1.5px solid var(--line)",
+        background: "rgba(255, 255, 255, 0.8)",
+        backdropFilter: "blur(12px)",
+        position: "sticky",
+        top: 0,
+        zIndex: 100
+      }}>
+        <div className="brand" style={{ margin: 0, display: "flex", alignItems: "center", gap: 12 }}>
+          <span className="brand-mark" style={{ width: 38, height: 38, fontSize: "0.95rem" }}>C</span>
+          <span style={{ textAlign: "left" }}>
+            <strong style={{ display: "block", fontSize: "0.95rem" }}>Commuto</strong>
+            <small style={{ display: "block", color: "var(--muted)", fontSize: "0.72rem" }}>Campus carpool</small>
           </span>
         </div>
         <div style={{ display: "flex", gap: 12 }}>
           <Link href="/login" className="btn-ghost btn btn-sm">Sign in</Link>
-          <Link href="/login" className="btn-solid btn btn-sm">Get started</Link>
+          <Link href="/login" className="btn-solid btn btn-sm" style={{ background: "var(--teal)", borderColor: "var(--teal)" }}>Get started</Link>
         </div>
       </header>
 
-      {/* ── Hero ── */}
-      <section style={{ maxWidth: 960, margin: "0 auto", padding: "80px 36px 60px", textAlign: "center" }}>
-        <p className="kicker">Amrita verified network</p>
-        <h1 style={{ fontSize: "clamp(2.4rem, 6vw, 4rem)", letterSpacing: "-0.03em", lineHeight: 1.1, marginBottom: 20 }}>
-          Carpool with verified <br />Amrita students
+      {/* ── Hero Section ── */}
+      <section style={{
+        position: "relative",
+        overflow: "hidden",
+        maxWidth: 1120,
+        width: "100%",
+        margin: "0 auto",
+        padding: "90px 24px 70px",
+        textAlign: "center",
+      }}>
+        {/* Animated gradient mesh background blur */}
+        <div style={{
+          position: "absolute",
+          top: "-20%",
+          left: "50%",
+          transform: "translateX(-50%)",
+          width: "80%",
+          height: "300px",
+          background: "radial-gradient(circle, rgba(14, 168, 127, 0.12) 0%, rgba(246, 246, 243, 0) 70%)",
+          filter: "blur(60px)",
+          zIndex: -1
+        }} />
+
+        <p className="kicker" style={{ fontSize: "0.8rem", marginBottom: 12 }}>Amrita verified network</p>
+        <h1 style={{
+          fontSize: "clamp(2.5rem, 6vw, 4.4rem)",
+          letterSpacing: "-0.04em",
+          lineHeight: 1.06,
+          marginBottom: 24,
+          fontWeight: 800
+        }}>
+          Share rides, split costs.<br />
+          <span style={{ color: "var(--teal)" }}>Purely for Amrita.</span>
         </h1>
-        <p style={{ fontSize: "1.2rem", color: "var(--muted)", maxWidth: 560, margin: "0 auto 36px", lineHeight: 1.6, fontWeight: 600 }}>
-          Find rides to the railway station, airport, or anywhere nearby. Every user verified with a college email.
+        <p style={{
+          fontSize: "1.24rem",
+          color: "var(--muted)",
+          maxWidth: 620,
+          margin: "0 auto 40px",
+          lineHeight: 1.6,
+          fontWeight: 500
+        }}>
+          Connect with verified students on campus. Safe, reliable carpools to Coimbatore Junction, Airport, or anywhere nearby.
         </p>
-        <div style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap" }}>
-          <Link href="/login" className="btn-solid btn" style={{ minHeight: 52, padding: "0 28px", fontSize: "1rem" }}>
+
+        <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap" }}>
+          <Link href="/login" className="btn-solid btn btn-lg" style={{ background: "var(--navy)", borderColor: "var(--navy)", minWidth: 180 }}>
             Find a ride →
           </Link>
-          <Link href="/login" className="btn-ghost btn" style={{ minHeight: 52, padding: "0 28px", fontSize: "1rem" }}>
-            Create a pool
+          <Link href="/login" className="btn-ghost btn btn-lg" style={{ minWidth: 180 }}>
+            Host a carpool
           </Link>
         </div>
       </section>
 
-      {/* ── Features ── */}
-      <section style={{ maxWidth: 960, margin: "0 auto 80px", padding: "0 36px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 20 }}>
-        {[
-          { icon: "🎓", title: "College email verified", desc: "Only @amrita.edu addresses. Every user is a real student." },
-          { icon: "🔒", title: "Privacy controls", desc: "Phone numbers masked until join. Premium members get early contact visibility." },
-          { icon: "👩‍🎓", title: "Women-only pools", desc: "Hosts can restrict their pool to women students for added comfort." },
-          { icon: "⚡", title: "Leaving soon sorting", desc: "Pools departing within 5 hours automatically rise to the top." },
-          { icon: "🛡️", title: "Moderation", desc: "Report bad actors. Admins can suspend users and close reports." },
-          { icon: "💸", title: "Split the cost", desc: "Set cost per person. No commission — money exchanged directly." },
-        ].map((f) => (
-          <div key={f.title} style={{ padding: "24px", border: "1px solid var(--line)", borderRadius: 14, background: "var(--panel)" }}>
-            <div style={{ fontSize: "1.8rem", marginBottom: 12 }}>{f.icon}</div>
-            <h3 style={{ fontSize: "1rem", marginBottom: 6 }}>{f.title}</h3>
-            <p style={{ color: "var(--muted)", lineHeight: 1.5, fontSize: "0.9rem", margin: 0 }}>{f.desc}</p>
-          </div>
-        ))}
+      {/* ── Steps: How it Works ── */}
+      <section style={{
+        maxWidth: 1120,
+        width: "100%",
+        margin: "0 auto 80px",
+        padding: "0 24px",
+      }}>
+        <div style={{ textAlign: "center", marginBottom: 44 }}>
+          <p className="kicker">Process</p>
+          <h2 style={{ fontSize: "2rem" }}>How Commuto works</h2>
+        </div>
+
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+          gap: 24
+        }}>
+          {[
+            { step: "01", title: "Authenticate", desc: "Sign in with your Amrita student email. Your details are decoded and profile is prefilled instantly." },
+            { step: "02", title: "Search or Host", desc: "Discover active rides sorted by departure time, or create a pool with settings like women-only or phone privacy." },
+            { step: "03", title: "Join & Ride", desc: "Secure a seat. Host phone details unlock automatically for members. Split the cost directly." }
+          ].map((item) => (
+            <div key={item.step} style={{
+              background: "var(--panel)",
+              border: "1.5px solid var(--line)",
+              borderRadius: 20,
+              padding: 32,
+              transition: "transform 0.2s ease, box-shadow 0.2s ease",
+              boxShadow: "var(--shadow-sm)"
+            }}>
+              <span style={{
+                display: "inline-block",
+                color: "var(--teal)",
+                fontFamily: "monospace",
+                fontWeight: 800,
+                fontSize: "1.3rem",
+                marginBottom: 16
+              }}>{item.step}</span>
+              <h3 style={{ fontSize: "1.2rem", marginBottom: 10 }}>{item.title}</h3>
+              <p style={{ color: "var(--muted)", fontSize: "0.92rem", lineHeight: 1.6, margin: 0 }}>{item.desc}</p>
+            </div>
+          ))}
+        </div>
       </section>
 
-      {/* ── CTA ── */}
-      <section style={{ background: "var(--navy)", color: "white", padding: "60px 36px", textAlign: "center" }}>
-        <h2 style={{ color: "white", fontSize: "clamp(1.8rem, 4vw, 2.6rem)", marginBottom: 12 }}>
-          Ready to carpool?
-        </h2>
-        <p style={{ color: "rgba(255,255,255,0.7)", fontSize: "1.05rem", marginBottom: 28 }}>
-          Sign in with your Amrita email to get started.
-        </p>
-        <Link href="/login" className="btn-solid btn" style={{ background: "white", color: "var(--navy)", borderColor: "white", minHeight: 50, padding: "0 28px", fontSize: "1rem" }}>
-          Sign in with college email →
-        </Link>
+      {/* ── Features grid ── */}
+      <section style={{
+        maxWidth: 1120,
+        width: "100%",
+        margin: "0 auto 80px",
+        padding: "0 24px",
+      }}>
+        <div style={{ textAlign: "center", marginBottom: 44 }}>
+          <p className="kicker">Features</p>
+          <h2 style={{ fontSize: "2rem" }}>Built with student safety in mind</h2>
+        </div>
+
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+          gap: 20
+        }}>
+          {[
+            { icon: "🎓", title: "Amrita Domain Whitelist", desc: "Only @students.amrita.edu and @amrita.edu addresses can enter. Guaranteed peers." },
+            { icon: "🔒", title: "Phone Masking", desc: "Your contact details are protected and only shown to approved co-riders." },
+            { icon: "👩‍🎓", title: "Women-Only Option", desc: "Female hosts can restrict pool visibility to women students for extra security." },
+            { icon: "⚡", title: "Urgent Priority Sorting", desc: "Pools leaving within 5 hours rise to the top automatically so you find last-minute rides." },
+            { icon: "🛡️", title: "Safety Moderation", desc: "Easily report bad behavior. Admins review reports and suspend bad actors instantly." },
+            { icon: "💸", title: "Zero Commission", desc: "Commuto is free. Split exact cab fares directly with peers without middleman fees." }
+          ].map((f) => (
+            <div key={f.title} style={{
+              padding: 28,
+              border: "1.5px solid var(--line)",
+              borderRadius: 16,
+              background: "var(--panel)",
+              boxShadow: "var(--shadow-sm)"
+            }}>
+              <div style={{ fontSize: "2rem", marginBottom: 14 }}>{f.icon}</div>
+              <h3 style={{ fontSize: "1.05rem", marginBottom: 8 }}>{f.title}</h3>
+              <p style={{ color: "var(--muted)", lineHeight: 1.55, fontSize: "0.88rem", margin: 0 }}>{f.desc}</p>
+            </div>
+          ))}
+        </div>
       </section>
 
-      <footer style={{ padding: "24px 48px", borderTop: "1px solid var(--line)", color: "var(--muted)", fontSize: "0.84rem", display: "flex", justifyContent: "space-between" }}>
-        <span>© 2026 Commuto. Built for Amrita.</span>
+      {/* ── Footer ── */}
+      <footer style={{
+        marginTop: "auto",
+        padding: "36px 48px",
+        borderTop: "1.5px solid var(--line)",
+        color: "var(--muted)",
+        fontSize: "0.88rem",
+        display: "flex",
+        justifyContent: "space-between",
+        background: "rgba(255, 255, 255, 0.4)",
+        flexWrap: "wrap",
+        gap: 16
+      }}>
+        <span>© 2026 Commuto. Created for Amrita Vishwa Vidyapeetham.</span>
         <span>Coimbatore Campus</span>
       </footer>
     </div>

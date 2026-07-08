@@ -9,6 +9,7 @@ interface ModalProps {
   onConfirm: () => void;
   onCancel: () => void;
   loading?: boolean;
+  children?: React.ReactNode;
 }
 
 export default function Modal({
@@ -20,12 +21,14 @@ export default function Modal({
   onConfirm,
   onCancel,
   loading = false,
+  children,
 }: ModalProps) {
   return (
     <div className="modal-backdrop" onClick={onCancel}>
       <div className="modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
         <h3>{title}</h3>
         <p>{message}</p>
+        {children}
         <div className="modal-actions">
           <button className="btn-ghost btn" onClick={onCancel} disabled={loading}>
             {cancelLabel}

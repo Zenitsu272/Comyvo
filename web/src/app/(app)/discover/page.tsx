@@ -8,7 +8,14 @@ import { toast } from "@/components/ui/Toast";
 export default function DiscoverPage() {
   const [pools, setPools] = useState<Pool[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState({ to: "", from: "", date: "", women_only: "" });
+  const [filters, setFilters] = useState({
+    to: "",
+    from: "",
+    date: "",
+    women_only: false,
+    min_seats: "",
+    sort_by: "soonest",
+  });
 
   const fetchPools = useCallback(async () => {
     setLoading(true);
@@ -16,16 +23,40 @@ export default function DiscoverPage() {
     if (filters.to) params.set("to", filters.to);
     if (filters.from) params.set("from", filters.from);
     if (filters.date) params.set("date", filters.date);
-    if (filters.women_only) params.set("women_only", filters.women_only);
+    if (filters.women_only) params.set("women_only", "true");
 
     const res = await fetch(`/api/pools?${params}`);
-    if (!res.ok) { toast("Failed to load pools.", "error"); setLoading(false); return; }
-    const data = await res.json();
+    if (!res.ok) {
+      toast("Failed to load pools.", "error");
+      setLoading(false);
+      return;
+    }
+    let data: Pool[] = await res.json();
+
+    // Client-side filtering & sorting
+    if (filters.min_seats) {
+      data = data.filter((p) => p.available_seats >= Number(filters.min_seats));
+    }
+
+    if (filters.sort_by === "soonest") {
+      data.sort((a, b) => new Date(a.departure_at).getTime() - new Date(b.departure_at).getTime());
+    } else if (filters.sort_by === "cheapest") {
+      data.sort((a, b) => a.cost_per_person - b.cost_per_person);
+    } else if (filters.sort_by === "seats") {
+      data.sort((a, b) => b.available_seats - a.available_seats);
+    }
+
     setPools(data);
     setLoading(false);
   }, [filters]);
 
-  useEffect(() => { fetchPools(); }, [fetchPools]);
+  // Real-time search trigger when filters change
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchPools();
+    }, 250); // slight debounce for text input typing
+    return () => clearTimeout(timer);
+  }, [filters, fetchPools]);
 
   const handleJoin = async (id: string) => {
     const res = await fetch(`/api/pools/${id}/join`, { method: "POST" });
@@ -77,11 +108,8 @@ export default function DiscoverPage() {
           </div>
         </div>
 
-        {/* ── Search ── */}
-        <form
-          className="search-panel"
-          onSubmit={(e) => { e.preventDefault(); fetchPools(); }}
-        >
+        {/* ── Search (Real-time trigger) ── */}
+        <div className="search-panel">
           <label>
             <span>Destination</span>
             <input
@@ -109,8 +137,55 @@ export default function DiscoverPage() {
               aria-label="Date"
             />
           </label>
-          <button type="submit" className="btn-solid btn">Search</button>
-        </form>
+        </div>
+
+        {/* ── Filter Pills & Sorters ── */}
+        <div className="filter-bar">
+          <button
+            type="button"
+            className={`filter-pill ${filters.women_only ? "active-teal" : ""}`}
+            onClick={() => setFilters((prev) => ({ ...prev, women_only: !prev.women_only }))}
+          >
+            👩‍🎓 Women only
+          </button>
+
+          <select
+            className="filter-pill"
+            value={filters.min_seats}
+            onChange={(e) => setFilters((prev) => ({ ...prev, min_seats: e.target.value }))}
+            style={{ appearance: "none", paddingRight: 24 }}
+            aria-label="Filter by minimum seats"
+          >
+            <option value="">🪑 Any seats</option>
+            <option value="1">1+ seats</option>
+            <option value="2">2+ seats</option>
+            <option value="3">3+ seats</option>
+            <option value="4">4+ seats</option>
+          </select>
+
+          <select
+            className="filter-pill"
+            value={filters.sort_by}
+            onChange={(e) => setFilters((prev) => ({ ...prev, sort_by: e.target.value }))}
+            style={{ appearance: "none", paddingRight: 24 }}
+            aria-label="Sort by"
+          >
+            <option value="soonest">⏳ Soonest first</option>
+            <option value="cheapest">💸 Cheapest first</option>
+            <option value="seats">🪑 Most seats first</option>
+          </select>
+
+          {(filters.to || filters.from || filters.date || filters.women_only || filters.min_seats) && (
+            <button
+              type="button"
+              className="filter-pill"
+              onClick={() => setFilters({ to: "", from: "", date: "", women_only: false, min_seats: "", sort_by: "soonest" })}
+              style={{ background: "none", border: "1.5px dashed var(--red)", color: "var(--red)" }}
+            >
+              ✕ Reset filters
+            </button>
+          )}
+        </div>
 
         {/* ── Grid ── */}
         <div className="discover-grid">
@@ -123,6 +198,7 @@ export default function DiscoverPage() {
               </>
             ) : pools.length === 0 ? (
               <div className="empty-state">
+                <span className="empty-state-icon">🔍</span>
                 <h3>No pools found</h3>
                 <p>Try adjusting your search filters, or create a new pool for your route.</p>
                 <a href="/create" className="btn-solid btn btn-sm">Create pool</a>

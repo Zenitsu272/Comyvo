@@ -116,6 +116,7 @@ export default function MyPoolsPage() {
                   {pool.is_host ? (
                     <>
                       <a href={`/pool/${pool.id}`} className="btn-ghost btn btn-sm">Members</a>
+                      <a href={`/pool/${pool.id}/edit`} className="btn-ghost btn btn-sm" style={{ border: "1.5px solid var(--teal)", color: "var(--teal)" }}>Edit</a>
                       <button className="btn-danger btn btn-sm" onClick={() => setCancelTarget(pool.id)}>
                         Cancel pool
                       </button>
