@@ -59,6 +59,7 @@ create table public.pools (
   available_seats     int not null,
   cost_per_person     numeric(8,2) not null,
   notes               text,
+  via_route           text, -- e.g. "Gandhipuram, Singanallur"
   campus              text not null default 'Coimbatore',
   women_only          boolean default false,
   contact_visibility  contact_visibility default 'after_join',
@@ -241,6 +242,7 @@ select
   p.available_seats,
   p.cost_per_person,
   p.notes,
+  p.via_route,
   p.campus,
   p.women_only,
   p.contact_visibility,

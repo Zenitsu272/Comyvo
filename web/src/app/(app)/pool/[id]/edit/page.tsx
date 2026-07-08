@@ -15,6 +15,7 @@ export default function EditPoolPage({ params }: { params: Promise<{ id: string 
   const [form, setForm] = useState({
     from_location: "",
     to_location: "",
+    via_route: "",
     departure_at: "",
     total_seats: "",
     cost_per_person: "",
@@ -48,6 +49,7 @@ export default function EditPoolPage({ params }: { params: Promise<{ id: string 
       setForm({
         from_location: data.from_location,
         to_location: data.to_location,
+        via_route: data.via_route ?? "",
         departure_at: formattedDate,
         total_seats: String(data.total_seats),
         cost_per_person: String(data.cost_per_person),
@@ -129,6 +131,16 @@ export default function EditPoolPage({ params }: { params: Promise<{ id: string 
               <label>
                 <span>To *</span>
                 <input id="to_location" name="to_location" value={form.to_location} onChange={handleChange} required />
+              </label>
+              <label style={{ gridColumn: "1 / -1" }}>
+                <span>Via / Stopovers (optional)</span>
+                <input
+                  id="via_route"
+                  name="via_route"
+                  value={form.via_route}
+                  onChange={handleChange}
+                  placeholder="e.g. Gandhipuram, Hope College (comma separated)"
+                />
               </label>
               <label>
                 <span>Departure date & time *</span>

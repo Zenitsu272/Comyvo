@@ -154,6 +154,14 @@ export default function PoolDetailPage({ params }: { params: Promise<{ id: strin
               </div>
             </div>
 
+            {pool.via_route && (
+              <div style={{ marginTop: "-6px", marginBottom: "16px", paddingLeft: "16px", display: "flex", gap: "6px", alignItems: "center" }}>
+                <span style={{ fontSize: "0.82rem", color: "var(--teal)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.02em" }}>
+                  via {pool.via_route}
+                </span>
+              </div>
+            )}
+
             {/* Meta */}
             <div className="ride-meta">
               <div>

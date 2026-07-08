@@ -12,6 +12,7 @@ export default function CreatePage() {
   const [form, setForm] = useState({
     from_location: "Campus Main Gate",
     to_location: "Coimbatore Railway Station",
+    via_route: "",
     departure_at: "",
     total_seats: "3",
     cost_per_person: "150",
@@ -77,6 +78,16 @@ export default function CreatePage() {
                 <span>To *</span>
                 <input id="to_location" name="to_location" value={form.to_location} onChange={handleChange} required />
               </label>
+              <label style={{ gridColumn: "1 / -1" }}>
+                <span>Via / Stopovers (optional)</span>
+                <input
+                  id="via_route"
+                  name="via_route"
+                  value={form.via_route}
+                  onChange={handleChange}
+                  placeholder="e.g. Gandhipuram, Hope College (comma separated)"
+                />
+              </label>
               <label>
                 <span>Departure date & time *</span>
                 <input id="departure_at" name="departure_at" type="datetime-local" value={form.departure_at} onChange={handleChange} required />
@@ -137,6 +148,11 @@ export default function CreatePage() {
                 <span className="badge badge-info">Preview</span>
                 {form.women_only && <span className="badge badge-rose">Women-only</span>}
                 <h3>{form.from_location || "From"} → {form.to_location || "To"}</h3>
+                {form.via_route && (
+                  <p style={{ fontSize: "0.82rem", color: "var(--teal)", margin: "4px 0", fontWeight: 600 }}>
+                    via {form.via_route}
+                  </p>
+                )}
                 <p>
                   {form.departure_at
                     ? new Date(form.departure_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })

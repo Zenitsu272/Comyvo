@@ -21,8 +21,13 @@ export async function GET(request: Request) {
   const womenOnly = searchParams.get("women_only");
   const campus = searchParams.get("campus");
 
-  if (to) query = query.ilike("to_location", `%${to}%`);
-  if (from) query = query.ilike("from_location", `%${from}%`);
+  // If a destination is searched, match EITHER to_location OR via_route!
+  if (to) {
+    query = query.or(`to_location.ilike.%${to}%,via_route.ilike.%${to}%`);
+  }
+  if (from) {
+    query = query.ilike("from_location", `%${from}%`);
+  }
   if (date) {
     const start = new Date(date);
     const end = new Date(date);
@@ -51,14 +56,13 @@ export async function GET(request: Request) {
     is_member: memberSet.has(pool.id),
     is_host: pool.host_id === user.id,
     viewer_role: profile?.role ?? "student",
-    // Expose full phone if viewer is premium/admin or is member/host
     host_phone_full:
       (profile?.role === "admin") ||
       (pool.contact_visibility === "always") ||
       (pool.contact_visibility === "premium_only" && profile?.role === "premium") ||
       memberSet.has(pool.id) ||
       pool.host_id === user.id
-        ? pool.host_phone_masked  // real phone only available via join/detail
+        ? pool.host_phone_masked
         : null,
   }));
 
@@ -73,7 +77,7 @@ export async function POST(request: Request) {
 
   const body = await request.json();
   const {
-    from_location, to_location, departure_at,
+    from_location, to_location, via_route, departure_at,
     total_seats, cost_per_person, notes,
     campus, women_only, contact_visibility,
   } = body;
@@ -88,6 +92,7 @@ export async function POST(request: Request) {
       host_id: user.id,
       from_location,
       to_location,
+      via_route: via_route || null,
       departure_at,
       total_seats: Number(total_seats),
       available_seats: Number(total_seats),

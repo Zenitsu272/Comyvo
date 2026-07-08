@@ -15,6 +15,7 @@ export interface Pool {
   available_seats: number;
   cost_per_person: number;
   notes: string | null;
+  via_route?: string | null;
   women_only: boolean;
   contact_visibility: "always" | "premium_only" | "after_join";
   status: "active" | "full" | "cancelled" | "completed";
@@ -103,6 +104,14 @@ export default function PoolCard({ pool, onJoin, onLeave }: PoolCardProps) {
             <small>est. {Math.round(40 + Math.random() * 30)} min</small>
           </div>
         </div>
+
+        {pool.via_route && (
+          <div style={{ marginTop: "-6px", marginBottom: "12px", paddingLeft: "16px", display: "flex", gap: "6px", alignItems: "center" }}>
+            <span style={{ fontSize: "0.78rem", color: "var(--teal)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.02em" }}>
+              via {pool.via_route}
+            </span>
+          </div>
+        )}
 
         {/* Meta */}
         <div className="ride-meta">
