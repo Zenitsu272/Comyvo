@@ -33,7 +33,7 @@ export async function createClient() {
     return {
       data: {
         user: {
-          id: "11111111-1111-1111-1111-111111111111",
+          id: "88d13b72-3377-40ed-9168-466ee65904f2",
           email: "mock.student@cb.students.amrita.edu",
           role: "authenticated",
           aud: "authenticated",
