@@ -5,7 +5,9 @@ import { Pool } from "@/components/pools/PoolCard";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { toast } from "@/components/ui/Toast";
 import Modal from "@/components/ui/Modal";
+import DiscussionBoard from "@/components/pools/DiscussionBoard";
 import { formatDeparture } from "@/lib/utils";
+import { ShieldCheck, AlertTriangle } from "lucide-react";
 
 interface Member {
   user_id: string;
@@ -16,6 +18,8 @@ interface PoolDetail extends Pool {
   members: Member[];
   host_phone_full: string | null;
   campus: string | null;
+  viewer_id?: string;
+  luggage_capacity?: string;
 }
 
 export default function PoolDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -115,6 +119,13 @@ export default function PoolDetailPage({ params }: { params: Promise<{ id: strin
     );
   }
 
+  const luggageLabel = () => {
+    const val = pool.luggage_capacity || "any";
+    if (val === "backpacks") return "Backpacks / Small bags only";
+    if (val === "trolleys") return "Large trolley luggage allowed";
+    return "Any luggage size allowed";
+  };
+
   return (
     <>
       <header className="topbar">
@@ -202,6 +213,11 @@ export default function PoolDetailPage({ params }: { params: Promise<{ id: strin
                 </button>
               </div>
             )}
+
+            {/* ── Group discussion board (Only visible for host and members) ── */}
+            {(pool.is_member || pool.is_host) && pool.viewer_id && (
+              <DiscussionBoard poolId={id} currentUserId={pool.viewer_id} />
+            )}
           </div>
 
           {/* Aside */}
@@ -231,6 +247,7 @@ export default function PoolDetailPage({ params }: { params: Promise<{ id: strin
                 <div><span>Campus</span><strong>{pool.campus ?? "Coimbatore"}</strong></div>
                 <div><span>Total seats</span><strong>{pool.total_seats}</strong></div>
                 <div><span>Status</span><strong>{pool.status.charAt(0).toUpperCase() + pool.status.slice(1)}</strong></div>
+                <div><span>Luggage</span><strong style={{ fontSize: "0.82rem" }}>{luggageLabel()}</strong></div>
                 <div>
                   <span>Phone visibility</span>
                   <strong style={{ fontSize: "0.82rem" }}>

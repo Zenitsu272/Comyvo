@@ -51,6 +51,7 @@ export async function GET(_: Request, { params }: Params) {
     ...pool,
     is_member: isMember,
     is_host: isHost,
+    viewer_id: user.id,
     viewer_role: profile?.role ?? "student",
     host_phone_full: hostPhoneFull,
     members: members ?? [],
@@ -80,6 +81,45 @@ export async function PUT(request: Request, { params }: Params) {
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // Send Resend notifications to all co-riders if the pool is cancelled
+  if (updates.status === "cancelled" && process.env.RESEND_API_KEY) {
+    try {
+      const { data: members } = await supabase
+        .from("pool_members")
+        .select("users(email, full_name)")
+        .eq("pool_id", id);
+
+      if (members && members.length > 0) {
+        const emailPromises = members.map(async (m: any) => {
+          const rider = m.users;
+          if (rider?.email) {
+            await fetch("https://api.resend.com/emails", {
+              method: "POST",
+              headers: {
+                "Authorization": `Bearer ${process.env.RESEND_API_KEY}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                from: "Commuto <onboarding@resend.dev>",
+                to: rider.email,
+                subject: "Your Commuto carpool has been cancelled ⚠️",
+                html: `
+                  <h3>Hello ${rider.full_name || 'Rider'},</h3>
+                  <p>The carpool from <strong>${data.from_location} &rarr; ${data.to_location}</strong> has been cancelled by the host.</p>
+                  <p>You can search and join other active pools on the Discover board: <a href="${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/discover">Search new pools</a>.</p>
+                `,
+              }),
+            });
+          }
+        });
+        await Promise.all(emailPromises);
+      }
+    } catch (err) {
+      console.error("Cancellation notifications dispatch failed:", err);
+    }
+  }
+
   return NextResponse.json(data);
 }
 

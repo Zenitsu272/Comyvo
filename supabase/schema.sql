@@ -60,6 +60,7 @@ create table public.pools (
   cost_per_person     numeric(8,2) not null,
   notes               text,
   via_route           text, -- e.g. "Gandhipuram, Singanallur"
+  luggage_capacity    text not null default 'any', -- 'any' | 'backpacks' | 'trolleys'
   campus              text not null default 'Coimbatore',
   women_only          boolean default false,
   contact_visibility  contact_visibility default 'after_join',
@@ -147,6 +148,17 @@ create trigger reports_updated_at
   for each row execute function update_updated_at();
 
 -- ============================================================
+-- DISCUSSION BOARD (COMMENTS)
+-- ============================================================
+create table public.comments (
+  id          uuid primary key default uuid_generate_v4(),
+  pool_id     uuid not null references public.pools(id) on delete cascade,
+  user_id     uuid not null references public.users(id) on delete cascade,
+  message     text not null,
+  created_at  timestamptz default now()
+);
+
+-- ============================================================
 -- ROW LEVEL SECURITY
 -- ============================================================
 
@@ -227,6 +239,35 @@ create policy "Admins can manage all reports"
     )
   );
 
+-- COMMENTS policies
+alter table public.comments enable row level security;
+
+create policy "Members and hosts can view discussion"
+  on public.comments for select
+  using (
+    exists (
+      select 1 from public.pools p
+      where p.id = pool_id and p.host_id = auth.uid()
+    ) or exists (
+      select 1 from public.pool_members pm
+      where pm.pool_id = pool_id and pm.user_id = auth.uid()
+    )
+  );
+
+create policy "Members and hosts can post comments"
+  on public.comments for insert
+  with check (
+    auth.uid() = user_id and (
+      exists (
+        select 1 from public.pools p
+        where p.id = pool_id and p.host_id = auth.uid()
+      ) or exists (
+        select 1 from public.pool_members pm
+        where pm.pool_id = pool_id and pm.user_id = auth.uid()
+      )
+    )
+  );
+
 -- ============================================================
 -- HELPER VIEWS
 -- ============================================================
@@ -243,6 +284,7 @@ select
   p.cost_per_person,
   p.notes,
   p.via_route,
+  p.luggage_capacity,
   p.campus,
   p.women_only,
   p.contact_visibility,
@@ -255,4 +297,5 @@ select
   concat('********', right(u.phone, 2)) as host_phone_masked,
   p.host_id
 from public.pools p
-join public.users u on u.id = p.host_id;
+join public.users u on u.id = p.host_id
+where p.departure_at >= now() - interval '2 hours';

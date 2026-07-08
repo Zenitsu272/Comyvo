@@ -21,6 +21,7 @@ export default function EditPoolPage({ params }: { params: Promise<{ id: string 
     cost_per_person: "",
     notes: "",
     campus: "",
+    luggage_capacity: "any",
     women_only: false,
     contact_visibility: "after_join" as "always" | "premium_only" | "after_join",
     status: "active" as "active" | "full" | "cancelled" | "completed",
@@ -55,6 +56,7 @@ export default function EditPoolPage({ params }: { params: Promise<{ id: string 
         cost_per_person: String(data.cost_per_person),
         notes: data.notes ?? "",
         campus: data.campus ?? "Coimbatore",
+        luggage_capacity: data.luggage_capacity ?? "any",
         women_only: data.women_only,
         contact_visibility: data.contact_visibility,
         status: data.status,
@@ -158,6 +160,14 @@ export default function EditPoolPage({ params }: { params: Promise<{ id: string 
                 <span>Campus</span>
                 <select id="campus" name="campus" value={form.campus} onChange={handleChange}>
                   {CAMPUSES.map((c) => <option key={c}>{c}</option>)}
+                </select>
+              </label>
+              <label>
+                <span>Luggage Capacity</span>
+                <select id="luggage_capacity" name="luggage_capacity" value={form.luggage_capacity} onChange={handleChange}>
+                  <option value="any">Any luggage size</option>
+                  <option value="backpacks">Backpacks / Small bags only</option>
+                  <option value="trolleys">Large trolley luggage allowed</option>
                 </select>
               </label>
               <label style={{ gridColumn: "1 / -1" }}>

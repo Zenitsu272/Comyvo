@@ -18,6 +18,7 @@ export default function CreatePage() {
     cost_per_person: "150",
     notes: "",
     campus: "Coimbatore",
+    luggage_capacity: "any",
     women_only: false,
     contact_visibility: "after_join" as "always" | "premium_only" | "after_join",
   });
@@ -106,6 +107,14 @@ export default function CreatePage() {
                   {CAMPUSES.map((c) => <option key={c}>{c}</option>)}
                 </select>
               </label>
+              <label>
+                <span>Luggage Capacity</span>
+                <select id="luggage_capacity" name="luggage_capacity" value={form.luggage_capacity} onChange={handleChange}>
+                  <option value="any">Any luggage size</option>
+                  <option value="backpacks">Backpacks / Small bags only</option>
+                  <option value="trolleys">Large trolley luggage allowed</option>
+                </select>
+              </label>
             </div>
 
             <label>
@@ -158,6 +167,9 @@ export default function CreatePage() {
                     ? new Date(form.departure_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })
                     : "Pick a date"
                   } · {form.total_seats} seats · ₹{form.cost_per_person}
+                </p>
+                <p style={{ fontSize: "0.78rem", color: "var(--muted)", margin: "4px 0 10px" }}>
+                  Luggage: {form.luggage_capacity === "backpacks" ? "Backpacks only" : form.luggage_capacity === "trolleys" ? "Trolleys allowed" : "Any size allowed"}
                 </p>
                 {form.contact_visibility === "always" && (
                   <div className="mini-contact">

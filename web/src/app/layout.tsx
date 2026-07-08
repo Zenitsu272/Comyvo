@@ -11,6 +11,7 @@ export const metadata: Metadata = {
   description:
     "Verified campus carpool for Amrita students. Find or create ride pools to Coimbatore railway station, airport, and beyond.",
   keywords: ["carpool", "campus", "amrita", "coimbatore", "ride pool", "commuto"],
+  manifest: "/manifest.json",
   openGraph: {
     title: "Commuto — Campus Carpool",
     description: "Verified campus carpool for Amrita students.",

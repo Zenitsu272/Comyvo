@@ -16,6 +16,7 @@ export interface Pool {
   cost_per_person: number;
   notes: string | null;
   via_route?: string | null;
+  luggage_capacity?: string;
   women_only: boolean;
   contact_visibility: "always" | "premium_only" | "after_join";
   status: "active" | "full" | "cancelled" | "completed";
@@ -88,6 +89,12 @@ export default function PoolCard({ pool, onJoin, onLeave }: PoolCardProps) {
           )}
           {pool.contact_visibility === "after_join" && (
             <span className="badge badge-neutral">Contact after join</span>
+          )}
+          {pool.luggage_capacity === "backpacks" && (
+            <span className="badge badge-neutral">🎒 Backpacks only</span>
+          )}
+          {pool.luggage_capacity === "trolleys" && (
+            <span className="badge badge-neutral">🧳 Luggage allowed</span>
           )}
         </div>
 

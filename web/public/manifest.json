@@ -1,0 +1,17 @@
+{
+  "name": "Commuto Campus Carpool",
+  "short_name": "Commuto",
+  "description": "Verified campus carpool network for Amrita students.",
+  "start_url": "/discover",
+  "display": "standalone",
+  "background_color": "#f6f6f3",
+  "theme_color": "#0b8f6f",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    }
+  ]
+}
