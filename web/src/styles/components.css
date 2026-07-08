@@ -1,0 +1,604 @@
+/* ============================================================
+   COMMUTO — Pool components CSS
+   ride cards, search, forms, insight panel, phone preview
+   ============================================================ */
+
+/* ── Hero panel ──────────────────────────────────────────── */
+.hero-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 330px;
+  gap: 26px;
+  align-items: stretch;
+  min-height: 400px;
+  margin-bottom: 28px;
+  padding: 44px 48px;
+  border-radius: 18px;
+  color: white;
+  background: var(--navy);
+}
+
+.hero-panel .kicker {
+  color: #94ded5;
+}
+
+.hero-panel p {
+  max-width: 720px;
+  margin-bottom: 0;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 1.05rem;
+  font-weight: 600;
+  line-height: 1.6;
+}
+
+.trip-summary {
+  display: grid;
+  align-content: center;
+  gap: 8px;
+  padding: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.07);
+  align-self: end;
+}
+
+.trip-summary strong,
+.trip-summary small {
+  display: block;
+}
+
+.summary-label,
+.trip-summary small {
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+/* ── Search panel ────────────────────────────────────────── */
+.search-panel {
+  display: grid;
+  grid-template-columns: minmax(240px, 1.3fr) minmax(180px, 0.8fr) 180px auto;
+  gap: 12px;
+  align-items: end;
+  margin-bottom: 28px;
+}
+
+/* ── Discover grid ───────────────────────────────────────── */
+.discover-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 20px;
+}
+
+/* ── Rides list ──────────────────────────────────────────── */
+.rides-list {
+  display: grid;
+  gap: 12px;
+}
+
+/* ── Ride card ───────────────────────────────────────────── */
+.ride-card {
+  padding: 24px 28px 20px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel);
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+
+.ride-card:hover {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.07);
+  border-color: #d8d4ce;
+}
+
+.ride-card.is-featured {
+  border-color: var(--line);
+}
+
+.ride-status,
+.ride-footer,
+.card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ── Route ───────────────────────────────────────────────── */
+.route {
+  position: relative;
+  display: grid;
+  gap: 14px;
+  margin: 18px 0 22px;
+  padding-left: 25px;
+}
+
+.route::before {
+  content: "";
+  position: absolute;
+  left: 7px;
+  top: 12px;
+  bottom: 12px;
+  width: 2px;
+  background: #d4d0ca;
+  border-radius: 2px;
+}
+
+.route div {
+  position: relative;
+}
+
+.route p {
+  margin-bottom: 2px;
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.route small {
+  color: var(--muted);
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.route.compact {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding-left: 0;
+}
+
+.route.compact::before {
+  display: none;
+}
+
+.route-dot {
+  position: absolute;
+  left: -24px;
+  top: 4px;
+  width: 14px;
+  height: 14px;
+  border: 3px solid var(--teal-weak);
+  border-radius: 50%;
+  background: var(--navy);
+}
+
+.route.compact .route-dot {
+  position: static;
+  display: inline-block;
+  margin-right: 7px;
+  vertical-align: middle;
+}
+
+.route-dot.end {
+  background: #777;
+  border-color: #e8e4de;
+}
+
+/* ── Ride meta ───────────────────────────────────────────── */
+.ride-meta {
+  display: grid;
+  grid-template-columns: 1.2fr 0.6fr 0.9fr;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.ride-meta div,
+.contact-box,
+.mini-contact {
+  padding: 13px;
+  border-radius: 10px;
+  background: var(--panel-soft);
+}
+
+.ride-meta span,
+.contact-box span,
+.mini-contact span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.ride-meta strong,
+.contact-box strong,
+.mini-contact strong {
+  display: block;
+  margin-top: 3px;
+  overflow-wrap: anywhere;
+  font-size: 0.95rem;
+}
+
+/* ── Ride footer ─────────────────────────────────────────── */
+.ride-footer {
+  justify-content: flex-end;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.ride-footer .trust {
+  margin-right: auto;
+}
+
+/* ── Insight panel ───────────────────────────────────────── */
+.insight-panel {
+  display: grid;
+  align-content: start;
+  gap: 18px;
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel);
+}
+
+.map-card {
+  position: relative;
+  min-height: 200px;
+  border-radius: 10px;
+  overflow: hidden;
+  background:
+    linear-gradient(#e8e8e8 1px, transparent 1px),
+    #f7f7f5;
+  background-size: 100% 42px;
+}
+
+.map-line {
+  position: absolute;
+  left: 21%;
+  top: 62%;
+  width: 60%;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--teal);
+  transform: rotate(-26deg);
+}
+
+.map-pin {
+  position: absolute;
+  z-index: 1;
+  width: 16px;
+  height: 16px;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  background: var(--teal);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+}
+
+.map-pin.campus {
+  left: 19%;
+  top: 59%;
+}
+
+.map-pin.station {
+  right: 18%;
+  top: 30%;
+  background: var(--navy);
+}
+
+.route-caption {
+  margin: 0;
+  color: var(--muted);
+  font-weight: 700;
+  font-size: 0.88rem;
+  line-height: 1.4;
+}
+
+.insight-list {
+  display: grid;
+  gap: 0;
+}
+
+.insight-list div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.insight-list div:last-child {
+  border-bottom: 0;
+}
+
+.insight-list span {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.insight-list strong {
+  font-size: 0.9rem;
+}
+
+/* ── Create pool layout ──────────────────────────────────── */
+.create-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 20px;
+}
+
+.form-card {
+  display: grid;
+  gap: 14px;
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel);
+}
+
+/* ── Settings list ───────────────────────────────────────── */
+.settings-list {
+  display: grid;
+  gap: 10px;
+}
+
+.setting-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel-soft);
+  transition: border-color 0.15s;
+}
+
+.setting-row strong,
+.setting-row small {
+  display: block;
+}
+
+.setting-row small {
+  margin-top: 4px;
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.setting-row input[type="checkbox"] {
+  width: 22px;
+  min-height: 22px;
+  accent-color: var(--teal);
+  flex-shrink: 0;
+}
+
+.setting-row select {
+  max-width: 240px;
+}
+
+.setting-row.highlighted {
+  border-color: rgba(141, 79, 122, 0.22);
+  background: var(--women-weak);
+}
+
+/* ── Phone preview ───────────────────────────────────────── */
+.phone-preview {
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #f2f7f6;
+}
+
+.phone-frame {
+  width: min(100%, 265px);
+  min-height: 480px;
+  padding: 14px;
+  border: 8px solid #111827;
+  border-radius: 30px;
+  background: #f7f9fb;
+  box-shadow: 0 18px 40px rgba(16, 24, 32, 0.2);
+}
+
+.phone-top {
+  width: 68px;
+  height: 5px;
+  margin: 0 auto 22px;
+  border-radius: 999px;
+  background: #1f2937;
+}
+
+.mini-ride {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 14px;
+  background: white;
+}
+
+.mini-ride h3 {
+  font-size: 0.95rem;
+  margin-bottom: 2px;
+}
+
+.mini-ride p {
+  margin-bottom: 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.mini-contact {
+  padding: 10px 12px;
+}
+
+.mini-contact.muted {
+  opacity: 0.65;
+}
+
+/* ── My Pools — manage grid ──────────────────────────────── */
+.manage-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.manage-card {
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel);
+  transition: box-shadow 0.2s;
+}
+
+.manage-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+}
+
+.manage-card p {
+  color: var(--muted);
+  line-height: 1.5;
+  font-size: 0.9rem;
+}
+
+.manage-card.subdued {
+  background: var(--panel-soft);
+}
+
+.member-strip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 14px 0;
+}
+
+.member-avatar {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  color: var(--women);
+  background: var(--women-weak);
+  font-size: 0.72rem;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.member-strip span.extra {
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-weight: 700;
+  margin-left: 4px;
+}
+
+/* ── Admin queue ─────────────────────────────────────────── */
+.queue {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--panel);
+}
+
+.queue-row {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr) 180px auto;
+  gap: 14px;
+  align-items: center;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--line);
+}
+
+.queue-row:last-child {
+  border-bottom: 0;
+}
+
+.queue-row p {
+  margin-bottom: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.queue-head {
+  background: var(--panel-soft);
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* ── Pool detail ─────────────────────────────────────────── */
+.pool-detail-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 24px;
+}
+
+.pool-detail-card {
+  padding: 28px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel);
+}
+
+.pool-detail-aside {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+}
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width: 1120px) {
+  .discover-grid,
+  .create-layout,
+  .pool-detail-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .phone-preview {
+    display: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .hero-panel {
+    grid-template-columns: 1fr;
+    min-height: auto;
+    padding: 28px 22px;
+  }
+
+  .search-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .ride-meta,
+  .manage-grid,
+  .queue-row {
+    grid-template-columns: 1fr;
+  }
+
+  .queue-row {
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto auto;
+  }
+
+  .ride-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .ride-footer .trust,
+  .ride-footer button,
+  .card-actions button {
+    width: 100%;
+  }
+
+  .card-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .setting-row {
+    align-items: flex-start;
+  }
+
+  .setting-row select {
+    max-width: 100%;
+  }
+
+  .pool-detail-layout {
+    grid-template-columns: 1fr;
+  }
+}
