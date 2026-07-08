@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import PoolCard, { Pool } from "@/components/pools/PoolCard";
 import { PoolCardSkeleton } from "@/components/ui/Skeleton";
 import { toast } from "@/components/ui/Toast";
+import { Search, Compass, SlidersHorizontal, ArrowUpDown, ShieldCheck } from "lucide-react";
 
 export default function DiscoverPage() {
   const [pools, setPools] = useState<Pool[]>([]);
@@ -140,13 +141,15 @@ export default function DiscoverPage() {
         </div>
 
         {/* ── Filter Pills & Sorters ── */}
-        <div className="filter-bar">
+        <div className="filter-bar" style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <button
             type="button"
             className={`filter-pill ${filters.women_only ? "active-teal" : ""}`}
             onClick={() => setFilters((prev) => ({ ...prev, women_only: !prev.women_only }))}
+            style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
           >
-            👩‍🎓 Women only
+            <SlidersHorizontal size={14} />
+            Women only
           </button>
 
           <select
@@ -156,23 +159,22 @@ export default function DiscoverPage() {
             style={{ appearance: "none", paddingRight: 24 }}
             aria-label="Filter by minimum seats"
           >
-            <option value="">🪑 Any seats</option>
-            <option value="1">1+ seats</option>
-            <option value="2">2+ seats</option>
-            <option value="3">3+ seats</option>
-            <option value="4">4+ seats</option>
+            <option value="">Any seats available</option>
+            <option value="1">1+ seats left</option>
+            <option value="2">2+ seats left</option>
+            <option value="3">3+ seats left</option>
           </select>
 
           <select
             className="filter-pill"
             value={filters.sort_by}
             onChange={(e) => setFilters((prev) => ({ ...prev, sort_by: e.target.value }))}
-            style={{ appearance: "none", paddingRight: 24 }}
+            style={{ appearance: "none", paddingRight: 24, display: "inline-flex", alignItems: "center" }}
             aria-label="Sort by"
           >
-            <option value="soonest">⏳ Soonest first</option>
-            <option value="cheapest">💸 Cheapest first</option>
-            <option value="seats">🪑 Most seats first</option>
+            <option value="soonest">Sort: Soonest departure</option>
+            <option value="cheapest">Sort: Cheapest fare</option>
+            <option value="seats">Sort: Available seats</option>
           </select>
 
           {(filters.to || filters.from || filters.date || filters.women_only || filters.min_seats) && (
@@ -182,7 +184,7 @@ export default function DiscoverPage() {
               onClick={() => setFilters({ to: "", from: "", date: "", women_only: false, min_seats: "", sort_by: "soonest" })}
               style={{ background: "none", border: "1.5px dashed var(--red)", color: "var(--red)" }}
             >
-              ✕ Reset filters
+              Reset filters
             </button>
           )}
         </div>
@@ -198,7 +200,7 @@ export default function DiscoverPage() {
               </>
             ) : pools.length === 0 ? (
               <div className="empty-state">
-                <span className="empty-state-icon">🔍</span>
+                <Search size={32} style={{ color: "var(--muted)", marginBottom: 8 }} />
                 <h3>No pools found</h3>
                 <p>Try adjusting your search filters, or create a new pool for your route.</p>
                 <a href="/create" className="btn-solid btn btn-sm">Create pool</a>

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ShieldCheck, EyeOff, Users, Zap, AlertOctagon, CirclePercent, ArrowRight } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Commuto — Verified Campus Carpool for Amrita Students",
@@ -46,7 +47,6 @@ export default function LandingPage() {
         padding: "90px 24px 70px",
         textAlign: "center",
       }}>
-        {/* Animated gradient mesh background blur */}
         <div style={{
           position: "absolute",
           top: "-20%",
@@ -54,7 +54,7 @@ export default function LandingPage() {
           transform: "translateX(-50%)",
           width: "80%",
           height: "300px",
-          background: "radial-gradient(circle, rgba(14, 168, 127, 0.12) 0%, rgba(246, 246, 243, 0) 70%)",
+          background: "radial-gradient(circle, rgba(14, 168, 127, 0.1) 0%, rgba(246, 246, 243, 0) 70%)",
           filter: "blur(60px)",
           zIndex: -1
         }} />
@@ -82,8 +82,9 @@ export default function LandingPage() {
         </p>
 
         <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap" }}>
-          <Link href="/login" className="btn-solid btn btn-lg" style={{ background: "var(--navy)", borderColor: "var(--navy)", minWidth: 180 }}>
-            Find a ride →
+          <Link href="/login" className="btn-solid btn btn-lg" style={{ background: "var(--navy)", borderColor: "var(--navy)", minWidth: 180, display: "inline-flex", gap: 8, alignItems: "center" }}>
+            Find a ride
+            <ArrowRight size={18} />
           </Link>
           <Link href="/login" className="btn-ghost btn btn-lg" style={{ minWidth: 180 }}>
             Host a carpool
@@ -118,7 +119,6 @@ export default function LandingPage() {
               border: "1.5px solid var(--line)",
               borderRadius: 20,
               padding: 32,
-              transition: "transform 0.2s ease, box-shadow 0.2s ease",
               boxShadow: "var(--shadow-sm)"
             }}>
               <span style={{
@@ -154,25 +154,30 @@ export default function LandingPage() {
           gap: 20
         }}>
           {[
-            { icon: "🎓", title: "Amrita Domain Whitelist", desc: "Only @students.amrita.edu and @amrita.edu addresses can enter. Guaranteed peers." },
-            { icon: "🔒", title: "Phone Masking", desc: "Your contact details are protected and only shown to approved co-riders." },
-            { icon: "👩‍🎓", title: "Women-Only Option", desc: "Female hosts can restrict pool visibility to women students for extra security." },
-            { icon: "⚡", title: "Urgent Priority Sorting", desc: "Pools leaving within 5 hours rise to the top automatically so you find last-minute rides." },
-            { icon: "🛡️", title: "Safety Moderation", desc: "Easily report bad behavior. Admins review reports and suspend bad actors instantly." },
-            { icon: "💸", title: "Zero Commission", desc: "Commuto is free. Split exact cab fares directly with peers without middleman fees." }
-          ].map((f) => (
-            <div key={f.title} style={{
-              padding: 28,
-              border: "1.5px solid var(--line)",
-              borderRadius: 16,
-              background: "var(--panel)",
-              boxShadow: "var(--shadow-sm)"
-            }}>
-              <div style={{ fontSize: "2rem", marginBottom: 14 }}>{f.icon}</div>
-              <h3 style={{ fontSize: "1.05rem", marginBottom: 8 }}>{f.title}</h3>
-              <p style={{ color: "var(--muted)", lineHeight: 1.55, fontSize: "0.88rem", margin: 0 }}>{f.desc}</p>
-            </div>
-          ))}
+            { icon: ShieldCheck, title: "Amrita Domain Whitelist", desc: "Only @students.amrita.edu and @amrita.edu addresses can enter. Guaranteed peers." },
+            { icon: EyeOff, title: "Phone Masking", desc: "Your contact details are protected and only shown to approved co-riders." },
+            { icon: Users, title: "Women-Only Option", desc: "Female hosts can restrict pool visibility to women students for extra security." },
+            { icon: Zap, title: "Urgent Priority Sorting", desc: "Pools leaving within 5 hours rise to the top automatically so you find last-minute rides." },
+            { icon: AlertOctagon, title: "Safety Moderation", desc: "Easily report bad behavior. Admins review reports and suspend bad actors instantly." },
+            { icon: CirclePercent, title: "Zero Commission", desc: "Commuto is free. Split exact cab fares directly with peers without middleman fees." }
+          ].map((f) => {
+            const Icon = f.icon;
+            return (
+              <div key={f.title} style={{
+                padding: 28,
+                border: "1.5px solid var(--line)",
+                borderRadius: 16,
+                background: "var(--panel)",
+                boxShadow: "var(--shadow-sm)"
+              }}>
+                <div style={{ color: "var(--teal)", marginBottom: 14, display: "inline-flex" }}>
+                  <Icon size={28} strokeWidth={2} />
+                </div>
+                <h3 style={{ fontSize: "1.05rem", marginBottom: 8 }}>{f.title}</h3>
+                <p style={{ color: "var(--muted)", lineHeight: 1.55, fontSize: "0.88rem", margin: 0 }}>{f.desc}</p>
+              </div>
+            );
+          })}
         </div>
       </section>
 

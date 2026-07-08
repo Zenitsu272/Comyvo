@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { toast } from "@/components/ui/Toast";
 import { Skeleton } from "@/components/ui/Skeleton";
 import Modal from "@/components/ui/Modal";
+import { ShieldCheck, AlertTriangle, Crown, User, Calendar, Building, Phone, LogOut } from "lucide-react";
 
 const DEPARTMENTS = [
   "CCE", "CSE", "ECE", "EEE", "MECH", "CIVIL", "IT",
@@ -138,7 +139,10 @@ export default function SettingsPage() {
           <h1>Profile settings</h1>
         </div>
         <div className="top-actions">
-          <button className="btn-ghost btn btn-sm" onClick={handleSignOut}>Sign out</button>
+          <button className="btn-ghost btn btn-sm" onClick={handleSignOut} style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>
+            <LogOut size={14} />
+            Sign out
+          </button>
         </div>
       </header>
 
@@ -208,12 +212,18 @@ export default function SettingsPage() {
               {profile.phone ? (
                 profile.is_phone_verified ? (
                   <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                    <span className="trust trust-verified" style={{ alignSelf: "flex-start" }}>✓ Verified number</span>
+                    <span className="trust trust-verified" style={{ alignSelf: "flex-start", gap: 6, display: "inline-flex", alignItems: "center" }}>
+                      <ShieldCheck size={14} />
+                      Verified number
+                    </span>
                     <p className="helper" style={{ fontSize: "0.82rem" }}>Other students will see the verified badge on your rides.</p>
                   </div>
                 ) : (
                   <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                    <span className="trust trust-caution" style={{ alignSelf: "flex-start" }}>⚠ Unverified number</span>
+                    <span className="trust trust-caution" style={{ alignSelf: "flex-start", gap: 6, display: "inline-flex", alignItems: "center" }}>
+                      <AlertTriangle size={14} />
+                      Unverified number
+                    </span>
                     <p className="helper" style={{ fontSize: "0.82rem" }}>Verify your phone number to build trust in the campus community.</p>
                     <button type="button" className="btn-teal btn btn-sm" onClick={() => setShowPhoneVerifyModal(true)}>
                       Verify Now
@@ -245,8 +255,9 @@ export default function SettingsPage() {
                 </>
               )}
               {profile.role === "premium" && (
-                <p className="helper" style={{ fontSize: "0.82rem" }}>
-                  You have active premium perks. Early contact visibility is unlocked!
+                <p className="helper" style={{ fontSize: "0.82rem", display: "flex", gap: 6, alignItems: "center" }}>
+                  <Crown size={14} style={{ color: "var(--amber)" }} />
+                  Active premium perks unlocked.
                 </p>
               )}
               {profile.role === "admin" && (

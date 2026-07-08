@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "@/components/ui/Toast";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { PhoneCall, Star, ShieldCheck, Crown } from "lucide-react";
 
 export default function PremiumPage() {
   const router = useRouter();
@@ -39,7 +40,6 @@ export default function PremiumPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    // Direct role update for manual developer sandbox testing
     const { error } = await supabase
       .from("users")
       .update({ role: "premium" })
@@ -93,21 +93,26 @@ export default function PremiumPage() {
               textAlign: "left"
             }}>
               {[
-                { icon: "📞", title: "Early Phone View", desc: "Instantly call any host to coordinate timings before booking a seat." },
-                { icon: "⭐", title: "Priority Support", desc: "Get priority moderation reviews for safety reports." },
-                { icon: "🛡️", title: "Premium Badge", desc: "A sleek premium badge on your profile to verify your reliability." }
-              ].map((p) => (
-                <div key={p.title} style={{ padding: 20, border: "1.5px solid var(--line)", borderRadius: 14, background: "var(--panel-soft)" }}>
-                  <div style={{ fontSize: "1.8rem", marginBottom: 10 }}>{p.icon}</div>
-                  <h4 style={{ margin: "0 0 6px", fontSize: "0.95rem" }}>{p.title}</h4>
-                  <p style={{ margin: 0, fontSize: "0.8rem", color: "var(--muted)", lineHeight: 1.5 }}>{p.desc}</p>
-                </div>
-              ))}
+                { icon: PhoneCall, title: "Early Phone View", desc: "Instantly call any host to coordinate timings before booking a seat." },
+                { icon: Star, title: "Priority Support", desc: "Get priority moderation reviews for safety reports." },
+                { icon: ShieldCheck, title: "Premium Badge", desc: "A sleek premium badge on your profile to verify your reliability." }
+              ].map((p) => {
+                const Icon = p.icon;
+                return (
+                  <div key={p.title} style={{ padding: 20, border: "1.5px solid var(--line)", borderRadius: 14, background: "var(--panel-soft)" }}>
+                    <div style={{ color: "var(--teal)", marginBottom: 10, display: "inline-flex" }}>
+                      <Icon size={24} strokeWidth={2} />
+                    </div>
+                    <h4 style={{ margin: "0 0 6px", fontSize: "0.95rem" }}>{p.title}</h4>
+                    <p style={{ margin: 0, fontSize: "0.8rem", color: "var(--muted)", lineHeight: 1.5 }}>{p.desc}</p>
+                  </div>
+                );
+              })}
             </div>
 
             {profile.role === "premium" ? (
               <div style={{ padding: "16px 24px", borderRadius: 12, background: "var(--teal-weak)", border: "1.5px solid rgba(11, 143, 111, 0.22)", display: "inline-flex", gap: 10, alignItems: "center" }}>
-                <span style={{ fontSize: "1.3rem" }}>👑</span>
+                <Crown size={20} style={{ color: "var(--amber)" }} />
                 <span style={{ color: "var(--teal)", fontWeight: 700 }}>You are an active Premium Member</span>
               </div>
             ) : profile.role === "admin" ? (
@@ -120,7 +125,7 @@ export default function PremiumPage() {
                 onClick={handleUpgrade}
                 disabled={requesting}
               >
-                {requesting ? "Activating membership…" : "Unlock Premium (Dev Mode Free) 🎉"}
+                Unlock Premium (Dev Mode Free)
               </button>
             )}
           </div>

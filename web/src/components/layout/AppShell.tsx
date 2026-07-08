@@ -1,16 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useState, useEffect } from "react";
+import { Compass, PlusCircle, Car, Settings, ShieldAlert } from "lucide-react";
 
 const NAV_ITEMS = [
-  { href: "/discover", label: "Discover", icon: "D" },
-  { href: "/create", label: "Create", icon: "C" },
-  { href: "/my-pools", label: "My Pools", icon: "M" },
-  { href: "/settings", label: "Settings", icon: "S" },
-  { href: "/admin", label: "Admin", icon: "A", adminOnly: true },
+  { href: "/discover", label: "Discover", icon: Compass },
+  { href: "/create", label: "Create", icon: PlusCircle },
+  { href: "/my-pools", label: "My Pools", icon: Car },
+  { href: "/settings", label: "Settings", icon: Settings },
+  { href: "/admin", label: "Admin", icon: ShieldAlert, adminOnly: true },
 ];
 
 interface User {
@@ -21,7 +22,6 @@ interface User {
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const router = useRouter();
   const supabase = createClient();
   const [user, setUser] = useState<User | null>(null);
 
@@ -38,11 +38,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     };
     fetchUser();
   }, [supabase]);
-
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    router.push("/login");
-  };
 
   const visibleNav = NAV_ITEMS.filter(
     (item) => !item.adminOnly || user?.role === "admin"
@@ -66,16 +61,21 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           </Link>
 
           <nav className="rail-nav" aria-label="App navigation">
-            {visibleNav.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`nav-btn ${pathname.startsWith(item.href) ? "active" : ""}`}
-              >
-                <span className="nav-icon">{item.icon}</span>
-                <span>{item.label}</span>
-              </Link>
-            ))}
+            {visibleNav.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`nav-btn ${pathname.startsWith(item.href) ? "active" : ""}`}
+                >
+                  <span className="nav-icon" style={{ display: "inline-flex", background: "none" }}>
+                    <Icon size={18} strokeWidth={2.2} />
+                  </span>
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
           </nav>
 
           <div className="rail-footer">
@@ -103,16 +103,21 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       {/* ── Mobile bottom nav ── */}
       <nav className="mobile-nav" aria-label="Mobile navigation">
         <div className="mobile-nav-inner">
-          {visibleNav.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`mobile-nav-btn ${pathname.startsWith(item.href) ? "active" : ""}`}
-            >
-              <span className="mobile-nav-icon">{item.icon}</span>
-              <span>{item.label}</span>
-            </Link>
-          ))}
+          {visibleNav.map((item) => {
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`mobile-nav-btn ${pathname.startsWith(item.href) ? "active" : ""}`}
+              >
+                <span className="mobile-nav-icon" style={{ display: "inline-flex", background: "none" }}>
+                  <Icon size={20} strokeWidth={2.2} />
+                </span>
+                <span>{item.label}</span>
+              </Link>
+            );
+          })}
         </div>
       </nav>
     </>
