@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Commuto Frontend Prototype</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <aside class="rail">
+        <a class="brand" href="#" aria-label="Commuto home">
+          <span class="brand-mark">C</span>
+          <span>
+            <strong>Commuto</strong>
+            <small>Campus carpool</small>
+          </span>
+        </a>
+
+        <nav class="nav" aria-label="Prototype screens">
+          <button class="nav-button is-active" data-screen="discover">
+            <span class="nav-icon">D</span>
+            <span>Discover</span>
+          </button>
+          <button class="nav-button" data-screen="create">
+            <span class="nav-icon">C</span>
+            <span>Create Pool</span>
+          </button>
+          <button class="nav-button" data-screen="my-pools">
+            <span class="nav-icon">M</span>
+            <span>My Pools</span>
+          </button>
+          <button class="nav-button" data-screen="auth">
+            <span class="nav-icon">V</span>
+            <span>Verify</span>
+          </button>
+          <button class="nav-button" data-screen="admin">
+            <span class="nav-icon">A</span>
+            <span>Admin</span>
+          </button>
+        </nav>
+
+        <section class="rail-card">
+          <span class="live-dot"></span>
+          <strong>Prototype mode</strong>
+          <p>Static screens with hardcoded sample data.</p>
+        </section>
+      </aside>
+
+      <section class="main-panel">
+        <header class="topbar">
+          <div class="title-block">
+            <p class="kicker">Amrita verified network</p>
+            <h1 id="screen-title">Discover rides</h1>
+          </div>
+          <div class="top-actions">
+            <button class="ghost-button">Filters</button>
+            <button class="solid-button">New pool</button>
+          </div>
+        </header>
+
+        <section class="screen is-visible" id="discover">
+          <div class="hero-panel">
+            <div>
+              <p class="kicker">Amrita verified network</p>
+              <h2>Verified campus rides, sorted by what matters first</h2>
+              <p>
+                Search by destination, privacy preference, seats, and time. Pools
+                leaving soon rise to the top.
+              </p>
+              <div class="trip-summary">
+                <span class="summary-label">Next departure</span>
+                <strong>3h 25m</strong>
+                <small>Campus main gate to railway station</small>
+              </div>
+            </div>
+          </div>
+
+          <form class="search-panel" aria-label="Pool search">
+            <label>
+              <span>Route</span>
+              <input value="Coimbatore Railway Station" aria-label="Route" />
+            </label>
+            <label>
+              <span>Leaving from</span>
+              <select aria-label="Leaving from">
+                <option>Campus Main Gate</option>
+                <option>AB3 Hostel</option>
+                <option>Amrita Bus Stop</option>
+              </select>
+            </label>
+            <label>
+              <span>Date</span>
+              <input type="date" value="2026-07-12" aria-label="Date" />
+            </label>
+            <button class="solid-button">Search</button>
+          </form>
+
+          <div class="discover-grid">
+            <section class="rides-list" aria-label="Active pools">
+              <article class="ride-card is-featured is-soon">
+                <div class="ride-status">
+                  <span class="badge urgent">Leaving in 3h 25m</span>
+                  <span class="badge success">2 seats left</span>
+                  <span class="badge info">Premium contact visible</span>
+                </div>
+                <div class="route">
+                  <div>
+                    <span class="route-dot"></span>
+                    <p>Campus main gate</p>
+                    <small>5:30 pm</small>
+                  </div>
+                  <div>
+                    <span class="route-dot end"></span>
+                    <p>Coimbatore railway station</p>
+                    <small>6:10 pm est.</small>
+                  </div>
+                </div>
+                <div class="ride-meta">
+                  <div><span>Host</span><strong>CB.EN.U4CCE24XXX</strong></div>
+                  <div><span>Cost</span><strong>Rs. 150</strong></div>
+                  <div><span>Phone</span><strong>9876543210</strong></div>
+                </div>
+                <div class="ride-footer">
+                  <span class="trust verified">Shown first because it leaves within 5 hours</span>
+                  <button class="ghost-button">Details</button>
+                  <button class="solid-button">Join pool</button>
+                </div>
+              </article>
+
+              <article class="ride-card">
+                <div class="ride-status">
+                  <span class="badge warning">1 seat left</span>
+                  <span class="badge rose">Women only</span>
+                  <span class="badge neutral">Contact after join</span>
+                </div>
+                <div class="route compact">
+                  <div>
+                    <span class="route-dot"></span>
+                    <p>AB3 Hostel</p>
+                    <small>8:15 AM</small>
+                  </div>
+                  <div>
+                    <span class="route-dot end"></span>
+                    <p>Gandhipuram Bus Stand</p>
+                    <small>13 Jul</small>
+                  </div>
+                </div>
+                <div class="ride-meta">
+                  <div><span>Host</span><strong>CB.EN.U4ECE23XXX</strong></div>
+                  <div><span>Cost</span><strong>Rs. 110</strong></div>
+                  <div><span>Phone</span><strong>********10</strong></div>
+                </div>
+                <div class="ride-footer">
+                  <span class="trust verified">Phone verified</span>
+                  <button class="solid-button">Join</button>
+                </div>
+              </article>
+
+              <article class="ride-card">
+                <div class="ride-status">
+                  <span class="badge success">3 seats left</span>
+                  <span class="badge neutral">Airport</span>
+                </div>
+                <div class="route compact">
+                  <div>
+                    <span class="route-dot"></span>
+                    <p>Campus Main Gate</p>
+                    <small>6:00 AM</small>
+                  </div>
+                  <div>
+                    <span class="route-dot end"></span>
+                    <p>Coimbatore Airport</p>
+                    <small>14 Jul</small>
+                  </div>
+                </div>
+                <div class="ride-meta">
+                  <div><span>Host</span><strong>CH.EN.U4CSE25XXX</strong></div>
+                  <div><span>Cost</span><strong>Rs. 420</strong></div>
+                  <div><span>Phone</span><strong>********84</strong></div>
+                </div>
+                <div class="ride-footer">
+                  <span class="trust caution">Unverified number</span>
+                  <button class="solid-button">Join</button>
+                </div>
+              </article>
+            </section>
+
+            <aside class="insight-panel">
+              <h3>Route pulse</h3>
+              <div class="map-card clean">
+                <span class="map-pin campus"></span>
+                <span class="map-pin station"></span>
+                <span class="map-line"></span>
+              </div>
+              <p class="route-caption">Campus main gate to Coimbatore railway station</p>
+              <div class="insight-list">
+                <div><span>Fastest match</span><strong>5:30 PM</strong></div>
+                <div><span>Average fare</span><strong>Rs. 165</strong></div>
+                <div><span>Verified hosts</span><strong>92%</strong></div>
+              </div>
+            </aside>
+          </div>
+        </section>
+
+        <section class="screen" id="create">
+          <div class="create-layout">
+            <form class="form-card" aria-label="Create pool sample">
+              <div class="section-heading">
+                <p class="kicker">Host controls</p>
+              <h2>Create a pool</h2>
+              </div>
+              <div class="field-grid">
+                <label><span>From</span><input value="Campus Main Gate" /></label>
+                <label><span>To</span><input value="Coimbatore Railway Station" /></label>
+                <label><span>Date and time</span><input type="datetime-local" value="2026-07-12T17:30" /></label>
+                <label><span>Total seats</span><input type="number" value="3" /></label>
+                <label><span>Cost per person</span><input value="150" /></label>
+                <label><span>Campus</span><select><option>Coimbatore</option></select></label>
+              </div>
+              <label><span>Notes</span><textarea>Cab booked from main gate. Please arrive 10 minutes early.</textarea></label>
+
+              <div class="settings-list">
+                <label class="setting-row highlighted">
+                  <span>
+                    <strong>Women-only pool</strong>
+                    <small>Only women students can discover and request to join this pool.</small>
+                  </span>
+                  <input type="checkbox" />
+                </label>
+                <label class="setting-row">
+                  <span>
+                    <strong>Comfort preference</strong>
+                    <small>Show this pool to students who match the selected comfort setting.</small>
+                  </span>
+                  <select aria-label="Comfort preference">
+                    <option>Open to all verified students</option>
+                    <option>Women only</option>
+                    <option>Same department preferred</option>
+                    <option>Same year preferred</option>
+                  </select>
+                </label>
+                <label class="setting-row">
+                  <span>
+                    <strong>Premium users can see my phone before joining</strong>
+                    <small>Normal users still see a masked number until they join.</small>
+                  </span>
+                  <input type="checkbox" checked />
+                </label>
+                <label class="setting-row">
+                  <span>
+                    <strong>Co-riders can see each other's phone numbers</strong>
+                    <small>Default keeps co-rider phone numbers private.</small>
+                  </span>
+                  <input type="checkbox" />
+                </label>
+              </div>
+
+              <button class="solid-button wide">Publish Pool</button>
+            </form>
+
+            <aside class="phone-preview">
+              <div class="phone-frame">
+                <div class="phone-top"></div>
+                <article class="mini-ride">
+                  <span class="badge info">Preview</span>
+                  <span class="badge rose">Women-only option</span>
+                  <h3>Campus Main Gate to Railway Station</h3>
+                  <p>12 Jul · 5:30 PM · 3 seats</p>
+                  <div class="mini-contact">
+                    <span>Premium view</span>
+                    <strong>9876543210</strong>
+                  </div>
+                  <div class="mini-contact muted">
+                    <span>Normal view</span>
+                    <strong>********10</strong>
+                  </div>
+                  <button class="solid-button wide">Join Pool</button>
+                </article>
+              </div>
+            </aside>
+          </div>
+        </section>
+
+        <section class="screen" id="my-pools">
+          <div class="section-heading">
+            <p class="kicker">Your trips</p>
+            <h2>Manage created and joined pools</h2>
+          </div>
+          <div class="tabs">
+            <button class="tab is-active">Created by me</button>
+            <button class="tab">Joined by me</button>
+          </div>
+          <div class="manage-grid">
+            <article class="manage-card">
+              <span class="badge success">Active</span>
+              <h3>Campus Main Gate to Railway Station</h3>
+              <p>2 joined · 1 seat left · 12 Jul, 5:30 PM</p>
+              <div class="member-strip">
+                <span>AV</span>
+                <span>RK</span>
+                <strong>+1 seat</strong>
+              </div>
+              <div class="card-actions">
+                <button class="ghost-button">Members</button>
+                <button class="ghost-button">Edit</button>
+                <button class="danger-button">Cancel</button>
+              </div>
+            </article>
+
+            <article class="manage-card subdued">
+              <span class="badge warning">Joined</span>
+              <h3>AB3 Hostel to Gandhipuram</h3>
+              <p>Host contact is unlocked. Co-rider numbers are hidden by host preference.</p>
+              <div class="contact-box">
+                <span>Host phone</span>
+                <strong>9876543210</strong>
+              </div>
+              <div class="card-actions">
+                <button class="ghost-button">Report</button>
+                <button class="danger-button">Leave pool</button>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="screen" id="auth">
+          <div class="auth-layout">
+            <section class="auth-card">
+              <p class="kicker">Step 1</p>
+              <h2>Verify college email</h2>
+              <label>
+                <span>Amrita email</span>
+                <input value="student@cb.amrita.edu" />
+              </label>
+              <p class="helper success-text">Allowed domains: amrita.edu and approved subdomains.</p>
+              <button class="solid-button wide">Send OTP</button>
+            </section>
+
+            <section class="auth-card">
+              <p class="kicker">Step 2</p>
+              <h2>Complete profile</h2>
+              <div class="field-grid">
+                <label><span>Full name</span><input value="Vaishak N" /></label>
+                <label><span>Roll number</span><input value="CB.EN.U4CCE24XXX" /></label>
+                <label><span>Phone</span><input value="9876543210" /></label>
+                <label><span>Department</span><select><option>CCE</option></select></label>
+              </div>
+              <p class="helper">Skipping phone OTP keeps the number marked as unverified.</p>
+              <button class="solid-button wide">Complete Profile</button>
+            </section>
+          </div>
+        </section>
+
+        <section class="screen" id="admin">
+          <div class="section-heading">
+            <p class="kicker">Safety console</p>
+            <h2>Moderation overview</h2>
+          </div>
+          <div class="metric-grid">
+            <article><span>Active pools</span><strong>42</strong></article>
+            <article><span>Open reports</span><strong>7</strong></article>
+            <article><span>Suspended</span><strong>3</strong></article>
+            <article><span>Premium</span><strong>18</strong></article>
+          </div>
+          <section class="queue">
+            <div class="queue-row queue-head">
+              <span>Status</span>
+              <span>Issue</span>
+              <span>User</span>
+              <span>Action</span>
+            </div>
+            <div class="queue-row">
+              <span class="badge danger">Report</span>
+              <p>Wrong contact number on airport pool</p>
+              <strong>CH.EN.U4CSE25XXX</strong>
+              <button class="ghost-button">Review</button>
+            </div>
+            <div class="queue-row">
+              <span class="badge warning">Late cancel</span>
+              <p>Cancelled within 2 hours of departure</p>
+              <strong>CB.EN.U4ECE23XXX</strong>
+              <button class="ghost-button">Warn</button>
+            </div>
+            <div class="queue-row">
+              <span class="badge info">Premium</span>
+              <p>Manual premium request</p>
+              <strong>CB.EN.U4CCE24XXX</strong>
+              <button class="solid-button">Approve</button>
+            </div>
+          </section>
+        </section>
+      </section>
+    </main>
+
+    <script src="./script.js"></script>
+  </body>
+</html>
