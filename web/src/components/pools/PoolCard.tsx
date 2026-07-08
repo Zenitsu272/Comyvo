@@ -17,6 +17,7 @@ export interface Pool {
   notes: string | null;
   via_route?: string | null;
   luggage_capacity?: string;
+  car_type?: string;
   women_only: boolean;
   contact_visibility: "always" | "premium_only" | "after_join";
   status: "active" | "full" | "cancelled" | "completed";
@@ -95,6 +96,18 @@ export default function PoolCard({ pool, onJoin, onLeave }: PoolCardProps) {
           )}
           {pool.luggage_capacity === "trolleys" && (
             <span className="badge badge-neutral">🧳 Luggage allowed</span>
+          )}
+          {pool.car_type === "auto" && (
+            <span className="badge badge-info" style={{ background: "var(--teal-weak)", color: "var(--teal)", borderColor: "var(--teal)" }}>
+              🛺 Auto Share
+            </span>
+          )}
+          {pool.car_type === "auto" &&
+           ((pool.from_location?.toLowerCase().includes("ettimadai") && pool.to_location?.toLowerCase().includes("campus")) ||
+            (pool.from_location?.toLowerCase().includes("campus") && pool.to_location?.toLowerCase().includes("ettimadai"))) && (
+            <span className="badge badge-rose" style={{ background: "rgba(244, 63, 94, 0.1)", color: "#e11d48", borderColor: "#f43f5e" }}>
+              📍 Ettimadai Shuttle
+            </span>
           )}
         </div>
 

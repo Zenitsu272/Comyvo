@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@/components/ui/Toast";
 
@@ -23,6 +23,26 @@ export default function CreatePage() {
     women_only: false,
     contact_visibility: "after_join" as "always" | "premium_only" | "after_join",
   });
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const from = params.get("from");
+      const to = params.get("to");
+      const car = params.get("car_type");
+      const seats = params.get("total_seats");
+      const cost = params.get("cost_per_person");
+
+      setForm((prev) => ({
+        ...prev,
+        from_location: from || prev.from_location,
+        to_location: to || prev.to_location,
+        car_type: car || prev.car_type,
+        total_seats: seats || (car === "auto" ? "3" : car === "suv" ? "6" : prev.total_seats),
+        cost_per_person: cost || (car === "auto" ? "30" : prev.cost_per_person),
+      }));
+    }
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;

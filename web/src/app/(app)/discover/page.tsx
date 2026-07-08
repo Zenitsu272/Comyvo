@@ -15,6 +15,7 @@ export default function DiscoverPage() {
     date: "",
     women_only: false,
     min_seats: "",
+    car_type: "",
     sort_by: "soonest",
   });
 
@@ -25,6 +26,7 @@ export default function DiscoverPage() {
     if (filters.from) params.set("from", filters.from);
     if (filters.date) params.set("date", filters.date);
     if (filters.women_only) params.set("women_only", "true");
+    if (filters.car_type) params.set("car_type", filters.car_type);
 
     const res = await fetch(`/api/pools?${params}`);
     if (!res.ok) {
@@ -109,6 +111,92 @@ export default function DiscoverPage() {
           </div>
         </div>
 
+        {/* ── Ettimadai Quick Auto-Share (Frequent Route) ── */}
+        <div style={{
+          background: "var(--panel)",
+          border: "1.5px solid var(--line)",
+          borderRadius: 14,
+          padding: 20,
+          marginBottom: 20,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: 16
+        }}>
+          <div>
+            <h3 style={{ margin: 0, fontSize: "0.95rem", display: "flex", alignItems: "center", gap: 6 }}>
+              <span>🛺</span> Ettimadai Quick Auto-Share
+            </h3>
+            <p style={{ margin: "2px 0 0", fontSize: "0.78rem", color: "var(--muted)" }}>
+              Share auto fares with other students on the most frequent route (3 seats).
+            </p>
+          </div>
+          <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+            <button
+              className="btn btn-sm"
+              style={{
+                background: filters.from === "Campus Main Gate" && filters.to === "Ettimadai Bus Stop" && filters.car_type === "auto"
+                  ? "var(--teal)"
+                  : "var(--panel-soft)",
+                color: filters.from === "Campus Main Gate" && filters.to === "Ettimadai Bus Stop" && filters.car_type === "auto"
+                  ? "#fff"
+                  : "var(--ink)",
+                borderColor: "var(--line-strong)"
+              }}
+              onClick={() => setFilters((p) => ({
+                ...p,
+                from: "Campus Main Gate",
+                to: "Ettimadai Bus Stop",
+                car_type: "auto"
+              }))}
+            >
+              To Bus Stop 🛺
+            </button>
+            <button
+              className="btn btn-sm"
+              style={{
+                background: filters.from === "Ettimadai Bus Stop" && filters.to === "Campus Main Gate" && filters.car_type === "auto"
+                  ? "var(--teal)"
+                  : "var(--panel-soft)",
+                color: filters.from === "Ettimadai Bus Stop" && filters.to === "Campus Main Gate" && filters.car_type === "auto"
+                  ? "#fff"
+                  : "var(--ink)",
+                borderColor: "var(--line-strong)"
+              }}
+              onClick={() => setFilters((p) => ({
+                ...p,
+                from: "Ettimadai Bus Stop",
+                to: "Campus Main Gate",
+                car_type: "auto"
+              }))}
+            >
+              From Bus Stop 🛺
+            </button>
+            {(filters.from || filters.to || filters.car_type) && (
+              <button
+                className="btn-ghost btn btn-sm"
+                onClick={() => setFilters((p) => ({
+                  ...p,
+                  from: "",
+                  to: "",
+                  car_type: ""
+                }))}
+                style={{ fontSize: "0.78rem" }}
+              >
+                Reset
+              </button>
+            )}
+            <a
+              href={`/create?from=${encodeURIComponent(filters.from || "Campus Main Gate")}&to=${encodeURIComponent(filters.to || "Ettimadai Bus Stop")}&car_type=auto&total_seats=3&cost_per_person=30`}
+              className="btn-solid btn btn-sm"
+              style={{ background: "#4f46e5", borderColor: "#4f46e5" }}
+            >
+              + Create Auto Share
+            </a>
+          </div>
+        </div>
+
         {/* ── Search (Real-time trigger) ── */}
         <div className="search-panel">
           <label>
@@ -177,11 +265,11 @@ export default function DiscoverPage() {
             <option value="seats">Sort: Available seats</option>
           </select>
 
-          {(filters.to || filters.from || filters.date || filters.women_only || filters.min_seats) && (
+          {(filters.to || filters.from || filters.date || filters.women_only || filters.min_seats || filters.car_type) && (
             <button
               type="button"
               className="filter-pill"
-              onClick={() => setFilters({ to: "", from: "", date: "", women_only: false, min_seats: "", sort_by: "soonest" })}
+              onClick={() => setFilters({ to: "", from: "", date: "", women_only: false, min_seats: "", car_type: "", sort_by: "soonest" })}
               style={{ background: "none", border: "1.5px dashed var(--red)", color: "var(--red)" }}
             >
               Reset filters

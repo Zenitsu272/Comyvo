@@ -20,6 +20,7 @@ export async function GET(request: Request) {
   const date = searchParams.get("date");
   const womenOnly = searchParams.get("women_only");
   const campus = searchParams.get("campus");
+  const carType = searchParams.get("car_type");
 
   // If a destination is searched, match EITHER to_location OR via_route!
   if (to) {
@@ -27,6 +28,9 @@ export async function GET(request: Request) {
   }
   if (from) {
     query = query.ilike("from_location", `%${from}%`);
+  }
+  if (carType) {
+    query = query.eq("car_type", carType);
   }
   if (date) {
     const start = new Date(date);
