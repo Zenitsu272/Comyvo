@@ -68,6 +68,49 @@ function LoginForm() {
     }
   };
 
+  const handleBypass = async () => {
+    setLoading(true);
+    setEmailError(null);
+    try {
+      const email = "mock.student@cb.students.amrita.edu";
+      // 1. Send OTP
+      const sendRes = await fetch("/api/auth/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const sendData = await sendRes.json();
+      if (!sendRes.ok) {
+        throw new Error(sendData.error || "Failed to trigger mock OTP");
+      }
+
+      // 2. Verify OTP with test code '123456'
+      const verifyRes = await fetch("/api/auth/verify-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, token: "123456" }),
+      });
+      const verifyData = await verifyRes.json();
+      if (!verifyRes.ok) {
+        throw new Error(
+          verifyData.error || "Failed to verify mock OTP. Make sure you added test OTP 123456 in your Supabase Auth settings."
+        );
+      }
+
+      // 3. Redirect
+      if (!verifyData.isProfileComplete) {
+        router.push("/signup?roll=CB.EN.U4CCE24130&campus=Coimbatore&dept=CCE&year=2024");
+      } else {
+        router.push(next);
+      }
+      toast("Logged in as Mock Student! ⚡", "success");
+    } catch (err: any) {
+      toast(err.message, "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="auth-shell">
       {/* Brand */}
@@ -132,9 +175,10 @@ function LoginForm() {
                     color: "var(--teal, #0d9488)",
                     borderColor: "var(--line-strong, #cbd5e1)",
                   }}
-                  onClick={() => router.push(next)}
+                  onClick={handleBypass}
+                  disabled={loading}
                 >
-                  ⚡ Bypass (Mock Student)
+                  {loading ? "Logging in..." : "⚡ Bypass (Mock Student)"}
                 </button>
               )}
             </form>
