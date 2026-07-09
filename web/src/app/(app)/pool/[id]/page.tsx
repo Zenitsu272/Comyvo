@@ -283,6 +283,58 @@ export default function PoolDetailPage({ params }: { params: Promise<{ id: strin
                 </div>
               </div>
             </div>
+
+            {/* Savings & Splits Card */}
+            <div style={{
+              padding: 20,
+              border: "1.5px solid var(--line)",
+              borderRadius: 14,
+              background: "linear-gradient(135deg, var(--teal-weak, #e3f3ed), #ffffff)",
+              boxShadow: "var(--shadow-sm)"
+            }}>
+              <h3 style={{ margin: "0 0 6px", display: "flex", alignItems: "center", gap: 6, color: "var(--teal)" }}>
+                <span>💰</span> Trip Split & Savings
+              </h3>
+              <p style={{ margin: "0 0 14px", fontSize: "0.78rem", color: "var(--muted)", lineHeight: 1.4 }}>
+                Estimated transit split and student savings.
+              </p>
+              
+              <div style={{ display: "grid", gap: 10, fontSize: "0.85rem", marginBottom: 14 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", color: "var(--muted)" }}>
+                  <span>Total Vehicle Cost:</span>
+                  <strong>₹{pool.cost_per_person * (pool.total_seats + 1)}</strong>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", color: "var(--ink)" }}>
+                  <span>Your Carpool Share:</span>
+                  <strong style={{ color: "var(--teal)" }}>₹{pool.cost_per_person}</strong>
+                </div>
+                <hr style={{ border: 0, borderTop: "1px solid var(--line)", margin: "4px 0" }} />
+                <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700 }}>
+                  <span>Solo Travel Cost:</span>
+                  <span style={{ color: "var(--red)" }}>
+                    ₹{pool.cost_per_person * (pool.total_seats + 1)}
+                  </span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700 }}>
+                  <span>Your Net Savings:</span>
+                  <span style={{ color: "var(--mint)" }}>
+                    ₹{Math.max(0, (pool.cost_per_person * (pool.total_seats + 1)) - pool.cost_per_person)}
+                  </span>
+                </div>
+              </div>
+
+              <div style={{
+                fontSize: "0.76rem",
+                color: "var(--teal)",
+                background: "rgba(11, 143, 111, 0.08)",
+                padding: "8px 12px",
+                borderRadius: 8,
+                border: "1px dashed rgba(11, 143, 111, 0.3)",
+                lineHeight: 1.4
+              }}>
+                🌟 By split-sharing this {pool.car_type || "ride"} instead of travelling solo, you save approximately <strong>{Math.round((1 - 1 / (pool.total_seats + 1)) * 100)}%</strong> of the fare!
+              </div>
+            </div>
           </div>
         </div>
       </div>

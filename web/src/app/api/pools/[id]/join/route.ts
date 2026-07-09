@@ -21,7 +21,7 @@ export async function POST(request: Request, { params }: Params) {
   // Check pool
   const { data: pool } = await supabase
     .from("pools")
-    .select("available_seats, total_seats, status, host_id, women_only, from_location, to_location")
+    .select("available_seats, total_seats, status, host_id, women_only, from_location, to_location, car_type")
     .eq("id", id)
     .single();
 
@@ -29,8 +29,21 @@ export async function POST(request: Request, { params }: Params) {
   if (pool.host_id === user.id) return NextResponse.json({ error: "You can't join your own pool." }, { status: 400 });
   if (pool.status !== "active") return NextResponse.json({ error: "Pool is not available." }, { status: 400 });
   if (pool.available_seats <= 0) return NextResponse.json({ error: "Pool is full." }, { status: 400 });
-  if (Number(seat_no) > pool.total_seats) {
-    return NextResponse.json({ error: `Seat number must be between 1 and ${pool.total_seats}` }, { status: 400 });
+
+  // Validate seat number based on car_type (Host takes seat #1, riders take 2+)
+  const maxSeatMap: Record<string, number> = {
+    auto: 3,
+    sedan: 4,
+    suv: 6,
+  };
+  const maxSeat = maxSeatMap[pool.car_type || "sedan"] || 4;
+
+  if (Number(seat_no) < 1 || Number(seat_no) > maxSeat) {
+    return NextResponse.json({ error: `Invalid seat selection for this vehicle.` }, { status: 400 });
+  }
+
+  if (Number(seat_no) === 1) {
+    return NextResponse.json({ error: "Seat #1 is occupied by the host student." }, { status: 400 });
   }
 
   // Women-only check

@@ -121,6 +121,22 @@ function LoginForm() {
               >
                 {loading ? "Sending…" : "Send OTP →"}
               </button>
+
+              {process.env.NODE_ENV === "development" && (
+                <button
+                  type="button"
+                  className="btn btn-wide btn-lg"
+                  style={{
+                    marginTop: 8,
+                    background: "var(--panel-soft, #f0f4f8)",
+                    color: "var(--teal, #0d9488)",
+                    borderColor: "var(--line-strong, #cbd5e1)",
+                  }}
+                  onClick={() => router.push(next)}
+                >
+                  ⚡ Bypass (Mock Student)
+                </button>
+              )}
             </form>
           </>
         ) : (

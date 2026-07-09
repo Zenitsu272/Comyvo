@@ -94,22 +94,29 @@ export default function SeatingChart({
       <div className="car-cabin-frame">
         {/* Front Row */}
         <div className="cabin-row">
-          {/* Driver seat (Host) */}
-          <a
-            href={`/profile/${hostId}`}
-            className="seat-slot occupied host-seat"
-            title={`Host: ${hostName} (${hostRoll || ""})`}
-            style={{ textDecoration: "none" }}
-          >
-            <div className="seat-avatar host-avatar">
-              <Crown size={12} style={{ position: "absolute", top: -8, color: "var(--amber)" }} />
-              {hostName.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase()}
+          {/* Driver seat (Hired Driver) */}
+          <div className="seat-slot occupied driver-seat" title="Hired Driver">
+            <div className="seat-avatar driver-avatar" style={{ background: "var(--muted, #475569)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              {carType === "auto" ? "🛺" : "👨‍✈️"}
             </div>
-            <span className="seat-label">Driver (Host)</span>
-          </a>
+            <span className="seat-label">Driver</span>
+          </div>
 
-          {/* Front Passenger seat */}
-          {carType !== "auto" && renderSeat(1, "Passenger")}
+          {/* Host Seat (Seat 1) */}
+          {carType !== "auto" && (
+            <a
+              href={`/profile/${hostId}`}
+              className="seat-slot occupied host-seat"
+              title={`Host: ${hostName} (${hostRoll || ""})`}
+              style={{ textDecoration: "none" }}
+            >
+              <div className="seat-avatar host-avatar">
+                <Crown size={12} style={{ position: "absolute", top: -8, color: "var(--amber)" }} />
+                {hostName.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase()}
+              </div>
+              <span className="seat-label">Host</span>
+            </a>
+          )}
         </div>
 
         {/* Middle Row (SUV only) */}
@@ -125,7 +132,19 @@ export default function SeatingChart({
         <div className="cabin-row back-row">
           {carType === "auto" ? (
             <>
-              {renderSeat(1, "Left")}
+              {/* Host is Seat 1 */}
+              <a
+                href={`/profile/${hostId}`}
+                className="seat-slot occupied host-seat"
+                title={`Host: ${hostName} (${hostRoll || ""})`}
+                style={{ textDecoration: "none" }}
+              >
+                <div className="seat-avatar host-avatar">
+                  <Crown size={12} style={{ position: "absolute", top: -8, color: "var(--amber)" }} />
+                  {hostName.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase()}
+                </div>
+                <span className="seat-label">Left (Host)</span>
+              </a>
               {renderSeat(2, "Center")}
               {renderSeat(3, "Right")}
             </>
@@ -145,14 +164,18 @@ export default function SeatingChart({
       </div>
 
       {/* Cabin Legend */}
-      <div style={{ display: "flex", gap: 16, justifyContent: "center", marginTop: 24, fontSize: "0.78rem", fontWeight: 700 }}>
+      <div style={{ display: "flex", gap: 16, justifyContent: "center", marginTop: 24, fontSize: "0.78rem", fontWeight: 700, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <div style={{ width: 12, height: 12, borderRadius: "50%", background: "var(--muted, #475569)" }} />
+          <span>Driver (Hired)</span>
+        </div>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <div style={{ width: 12, height: 12, borderRadius: "50%", background: "var(--teal)" }} />
-          <span>Host (Driver)</span>
+          <span>Host Student</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <div style={{ width: 12, height: 12, borderRadius: "50%", background: "var(--panel-soft)", border: "1px solid var(--line)" }} />
-          <span>Occupied seat</span>
+          <span>Rider (Joined)</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <div style={{ width: 12, height: 12, borderRadius: "50%", background: "none", border: "1.5px dashed var(--teal)" }} />

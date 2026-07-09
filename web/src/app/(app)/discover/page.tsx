@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import PoolCard, { Pool } from "@/components/pools/PoolCard";
 import { PoolCardSkeleton } from "@/components/ui/Skeleton";
 import { toast } from "@/components/ui/Toast";
@@ -9,6 +9,71 @@ import { Search, Compass, SlidersHorizontal, ArrowUpDown, ShieldCheck } from "lu
 export default function DiscoverPage() {
   const [pools, setPools] = useState<Pool[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedPulseRoute, setSelectedPulseRoute] = useState<"station" | "bus" | "airport" | "gandhipuram">("station");
+
+  const mapConfig = {
+    station: {
+      caption: "Campus Main Gate to Coimbatore Railway Station",
+      distance: "22 km",
+      campus: { left: "19%", top: "59%" },
+      destination: { right: "18%", top: "30%" },
+      line: { left: "21%", top: "62%", width: "60%", transform: "rotate(-26deg)" }
+    },
+    bus: {
+      caption: "Campus Main Gate to Ettimadai Bus Stop",
+      distance: "2 km (Local shuttle)",
+      campus: { left: "25%", top: "70%" },
+      destination: { right: "45%", top: "50%" },
+      line: { left: "27%", top: "72%", width: "30%", transform: "rotate(-40deg)" }
+    },
+    airport: {
+      caption: "Campus Main Gate to Coimbatore Airport (CJB)",
+      distance: "31 km",
+      campus: { left: "15%", top: "65%" },
+      destination: { right: "10%", top: "15%" },
+      line: { left: "17%", top: "68%", width: "75%", transform: "rotate(-35deg)" }
+    },
+    gandhipuram: {
+      caption: "Campus Main Gate to Gandhipuram Bus Stand",
+      distance: "24 km",
+      campus: { left: "20%", top: "60%" },
+      destination: { right: "15%", top: "25%" },
+      line: { left: "22%", top: "63%", width: "65%", transform: "rotate(-28deg)" }
+    }
+  };
+
+  const pulsePools = useMemo(() => {
+    return pools.filter((p) => {
+      const to = p.to_location.toLowerCase();
+      const from = p.from_location.toLowerCase();
+      const via = (p.via_route ?? "").toLowerCase();
+      
+      if (selectedPulseRoute === "station") {
+        return to.includes("station") || to.includes("railway") || via.includes("station") || via.includes("railway");
+      }
+      if (selectedPulseRoute === "bus") {
+        return to.includes("bus") || to.includes("ettimadai") || via.includes("bus") || via.includes("ettimadai") || from.includes("ettimadai");
+      }
+      if (selectedPulseRoute === "airport") {
+        return to.includes("airport") || via.includes("airport");
+      }
+      if (selectedPulseRoute === "gandhipuram") {
+        return to.includes("gandhipuram") || via.includes("gandhipuram");
+      }
+      return false;
+    });
+  }, [pools, selectedPulseRoute]);
+
+  const pulseActiveCount = pulsePools.filter((p) => p.status === "active" || p.status === "full").length;
+  const pulseSoonCount = pulsePools.filter((p) => {
+    const diff = new Date(p.departure_at).getTime() - Date.now();
+    return diff > 0 && diff <= 5 * 3600000;
+  }).length;
+  const pulseAvgFare = useMemo(() => {
+    if (pulsePools.length === 0) return 0;
+    const sum = pulsePools.reduce((s, p) => s + Number(p.cost_per_person), 0);
+    return Math.round(sum / pulsePools.length);
+  }, [pulsePools]);
   const [filters, setFilters] = useState({
     to: "",
     from: "",
@@ -64,9 +129,10 @@ export default function DiscoverPage() {
   const handleJoin = async (id: string) => {
     const res = await fetch(`/api/pools/${id}/join`, { method: "POST" });
     const data = await res.json();
-    if (!res.ok) { toast(data.error, "error"); return; }
+    if (!res.ok) { toast(data.error, "error"); return false; }
     toast("You've joined the pool!", "success");
     fetchPools();
+    return true;
   };
 
   const handleLeave = async (id: string) => {
@@ -302,28 +368,67 @@ export default function DiscoverPage() {
 
           {/* ── Insight panel ── */}
           <aside className="insight-panel">
-            <h3>Route pulse</h3>
-            <div className="map-card">
-              <span className="map-pin campus" />
-              <span className="map-pin station" />
-              <span className="map-line" />
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <h3 style={{ margin: 0 }}>Route pulse</h3>
+              <select
+                value={selectedPulseRoute}
+                onChange={(e) => setSelectedPulseRoute(e.target.value as any)}
+                style={{
+                  fontSize: "0.78rem",
+                  fontWeight: 700,
+                  padding: "4px 8px",
+                  borderRadius: 6,
+                  border: "1px solid var(--line-strong)",
+                  background: "var(--panel-soft)",
+                  cursor: "pointer"
+                }}
+              >
+                <option value="station">Railway Station</option>
+                <option value="bus">Ettimadai Bus Stop</option>
+                <option value="gandhipuram">Gandhipuram</option>
+                <option value="airport">Airport</option>
+              </select>
             </div>
-            <p className="route-caption">Campus main gate to Coimbatore railway station</p>
+            
+            <div className="map-card" style={{ transition: "all 0.5s ease" }}>
+              <span className="map-pin campus" style={{
+                left: mapConfig[selectedPulseRoute].campus.left,
+                top: mapConfig[selectedPulseRoute].campus.top,
+                transition: "all 0.5s cubic-bezier(0.4, 0, 0.2, 1)"
+              }} />
+              <span className="map-pin station" style={{
+                right: mapConfig[selectedPulseRoute].destination.right,
+                top: mapConfig[selectedPulseRoute].destination.top,
+                transition: "all 0.5s cubic-bezier(0.4, 0, 0.2, 1)",
+                background: "var(--navy)"
+              }} />
+              <span className="map-line" style={{
+                left: mapConfig[selectedPulseRoute].line.left,
+                top: mapConfig[selectedPulseRoute].line.top,
+                width: mapConfig[selectedPulseRoute].line.width,
+                transform: mapConfig[selectedPulseRoute].line.transform,
+                transition: "all 0.5s cubic-bezier(0.4, 0, 0.2, 1)"
+              }} />
+            </div>
+
+            <p className="route-caption" style={{ display: "flex", justifyContent: "space-between", margin: 0 }}>
+              <span>{mapConfig[selectedPulseRoute].caption}</span>
+              <strong style={{ color: "var(--teal)" }}>{mapConfig[selectedPulseRoute].distance}</strong>
+            </p>
+
             <div className="insight-list">
               <div>
                 <span>Active pools</span>
-                <strong>{pools.filter((p) => p.status === "active").length}</strong>
+                <strong style={{ transition: "all 0.3s ease" }}>{pulseActiveCount}</strong>
               </div>
               <div>
                 <span>Leaving soon</span>
-                <strong>{soon.length}</strong>
+                <strong style={{ transition: "all 0.3s ease" }}>{pulseSoonCount}</strong>
               </div>
               <div>
                 <span>Avg fare</span>
-                <strong>
-                  {pools.length > 0
-                    ? `₹${Math.round(pools.reduce((s, p) => s + Number(p.cost_per_person), 0) / pools.length)}`
-                    : "—"}
+                <strong style={{ transition: "all 0.3s ease" }}>
+                  {pulseAvgFare > 0 ? `₹${pulseAvgFare}` : "—"}
                 </strong>
               </div>
             </div>

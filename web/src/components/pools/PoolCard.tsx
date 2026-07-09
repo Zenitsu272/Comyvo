@@ -5,6 +5,7 @@ import Link from "next/link";
 import Modal from "@/components/ui/Modal";
 import { toast } from "@/components/ui/Toast";
 import { formatDeparture, timeUntil, isDepartingSoon, maskPhone, cn } from "@/lib/utils";
+import CarBookingAnimation from "@/components/pools/CarBookingAnimation";
 
 export interface Pool {
   id: string;
@@ -34,13 +35,14 @@ export interface Pool {
 
 interface PoolCardProps {
   pool: Pool;
-  onJoin?: (id: string) => Promise<void>;
+  onJoin?: (id: string) => Promise<boolean>;
   onLeave?: (id: string) => Promise<void>;
 }
 
 export default function PoolCard({ pool, onJoin, onLeave }: PoolCardProps) {
   const [loading, setLoading] = useState(false);
   const [modal, setModal] = useState<"join" | "leave" | null>(null);
+  const [bookingState, setBookingState] = useState<"idle" | "booking" | "success">("idle");
   const soon = isDepartingSoon(pool.departure_at);
 
   // Determine phone visibility
@@ -57,12 +59,30 @@ export default function PoolCard({ pool, onJoin, onLeave }: PoolCardProps) {
     return pool.host_phone_masked;
   })();
 
-  const handleAction = async (action: "join" | "leave") => {
+  const handleAction = async (action: "leave") => {
     setLoading(true);
     setModal(null);
     try {
-      if (action === "join") await onJoin?.(pool.id);
-      else await onLeave?.(pool.id);
+      await onLeave?.(pool.id);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleJoinAction = async () => {
+    setLoading(true);
+    setBookingState("booking");
+    try {
+      const success = await onJoin?.(pool.id);
+      if (success) {
+        setBookingState("success");
+        await new Promise((resolve) => setTimeout(resolve, 1800)); // wait for full success animation (glow)
+        setModal(null);
+      } else {
+        setBookingState("idle");
+      }
+    } catch {
+      setBookingState("idle");
     } finally {
       setLoading(false);
     }
@@ -179,7 +199,7 @@ export default function PoolCard({ pool, onJoin, onLeave }: PoolCardProps) {
               ) : (
                 <button
                   className="btn-solid btn btn-sm"
-                  onClick={() => setModal("join")}
+                  onClick={() => { setBookingState("idle"); setModal("join"); }}
                   disabled={loading || pool.available_seats === 0}
                 >
                   {pool.available_seats === 0 ? "Full" : "Join pool"}
@@ -198,10 +218,22 @@ export default function PoolCard({ pool, onJoin, onLeave }: PoolCardProps) {
           title="Join this pool?"
           message={`${pool.from_location} → ${pool.to_location} · ₹${pool.cost_per_person} · ${formatDeparture(pool.departure_at)}`}
           confirmLabel="Join Pool"
-          onConfirm={() => handleAction("join")}
-          onCancel={() => setModal(null)}
+          onConfirm={handleJoinAction}
+          onCancel={() => {
+            if (!loading) {
+              setModal(null);
+              setBookingState("idle");
+            }
+          }}
           loading={loading}
-        />
+        >
+          <CarBookingAnimation
+            state={bookingState}
+            totalSeats={pool.total_seats}
+            availableSeats={pool.available_seats}
+            carType={pool.car_type}
+          />
+        </Modal>
       )}
 
       {modal === "leave" && (
