@@ -1,0 +1,15 @@
+{
+  "name": "comyvo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Comyvo campus carpool platform",
+  "type": "module",
+  "scripts": {
+    "dev": "node --env-file-if-exists=.env --watch server.js",
+    "start": "node --env-file-if-exists=.env server.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  }
+}
