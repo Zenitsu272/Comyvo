@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { toast } from "@/components/ui/Toast";
 import { Skeleton } from "@/components/ui/Skeleton";
 import Modal from "@/components/ui/Modal";
-import { ShieldCheck, AlertTriangle, Crown, User, Calendar, Building, Phone, LogOut } from "lucide-react";
+import { ShieldCheck, AlertTriangle, Crown, LogOut } from "lucide-react";
 
 const DEPARTMENTS = [
   "CCE", "CSE", "ECE", "EEE", "MECH", "CIVIL", "IT",
@@ -29,33 +29,25 @@ interface Profile {
 
 export default function SettingsPage() {
   const router = useRouter();
-  const supabase = createClient();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showPhoneVerifyModal, setShowPhoneVerifyModal] = useState(false);
   const [phoneOtp, setPhoneOtp] = useState("");
   const [verifyingPhone, setVerifyingPhone] = useState(false);
-  const [generatedOtp] = useState(() => String(Math.floor(100000 + Math.random() * 900000)));
 
   useEffect(() => {
     const fetchProfile = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      const response = await fetch("/api/me", { cache: "no-store" });
+      if (response.status === 401) {
         router.push("/login");
         return;
       }
-      const { data } = await supabase
-        .from("users")
-        .select("*")
-        .eq("id", user.id)
-        .single();
-
-      setProfile(data);
+      setProfile(response.ok ? await response.json() : null);
       setLoading(false);
     };
     fetchProfile();
-  }, [supabase, router]);
+  }, [router]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     if (!profile) return;
@@ -86,38 +78,45 @@ export default function SettingsPage() {
     toast("Profile updated successfully!", "success");
   };
 
-  const handleVerifyPhone = async () => {
-    if (phoneOtp !== generatedOtp) {
-      toast("Invalid OTP code.", "error");
-      return;
-    }
+  const handleRequestPhoneOtp = async () => {
+    if (!profile?.phone) return;
     setVerifyingPhone(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { error } = await supabase
-      .from("users")
-      .update({ is_phone_verified: true })
-      .eq("id", user.id);
-
+    const response = await fetch("/api/phone/request-otp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ phone: profile.phone }),
+    });
+    const data = await response.json();
     setVerifyingPhone(false);
-    setShowPhoneVerifyModal(false);
+    if (!response.ok) return toast(data.error || "Verification code could not be sent.", "error");
+    setShowPhoneVerifyModal(true);
+    toast("Verification code sent by SMS.", "success");
+  };
 
-    if (error) {
-      toast("Verification failed. Please try again.", "error");
-      return;
-    }
+  const handleVerifyPhone = async () => {
+    if (!profile?.phone) return;
+    setVerifyingPhone(true);
+    const response = await fetch("/api/phone/verify-otp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ phone: profile.phone, code: phoneOtp }),
+    });
+    const data = await response.json();
+    setVerifyingPhone(false);
+    if (!response.ok) return toast(data.error || "Verification failed.", "error");
+    setShowPhoneVerifyModal(false);
     toast("Phone number verified successfully!", "success");
     setProfile((prev) => prev ? { ...prev, is_phone_verified: true } : null);
   };
 
   const handleSignOut = async () => {
+    const supabase = createClient();
     await supabase.auth.signOut();
     router.push("/login");
   };
 
   const handleRequestPremium = async () => {
-    toast("Premium request submitted! Verification takes 24 hours.", "success");
+    router.push("/premium");
   };
 
   if (loading) {
@@ -225,8 +224,8 @@ export default function SettingsPage() {
                       Unverified number
                     </span>
                     <p className="helper" style={{ fontSize: "0.82rem" }}>Verify your phone number to build trust in the campus community.</p>
-                    <button type="button" className="btn-teal btn btn-sm" onClick={() => setShowPhoneVerifyModal(true)}>
-                      Verify Now
+                    <button type="button" className="btn-teal btn btn-sm" onClick={handleRequestPhoneOtp} disabled={verifyingPhone}>
+                      {verifyingPhone ? "Sending…" : "Verify Now"}
                     </button>
                   </div>
                 )
@@ -273,7 +272,7 @@ export default function SettingsPage() {
       {showPhoneVerifyModal && (
         <Modal
           title="Verify your phone number"
-          message={`Enter the verification OTP code sent to your phone. (For local testing, type the code: ${generatedOtp})`}
+          message="Enter the verification code sent to your saved phone number."
           confirmLabel="Verify Code"
           onConfirm={handleVerifyPhone}
           onCancel={() => setShowPhoneVerifyModal(false)}

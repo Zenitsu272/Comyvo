@@ -3,9 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Modal from "@/components/ui/Modal";
-import { toast } from "@/components/ui/Toast";
-import { formatDeparture, timeUntil, isDepartingSoon, maskPhone, cn } from "@/lib/utils";
-import CarBookingAnimation from "@/components/pools/CarBookingAnimation";
+import { formatDeparture, timeUntil, isDepartingSoon, cn } from "@/lib/utils";
 
 export interface Pool {
   id: string;
@@ -35,14 +33,12 @@ export interface Pool {
 
 interface PoolCardProps {
   pool: Pool;
-  onJoin?: (id: string) => Promise<boolean>;
   onLeave?: (id: string) => Promise<void>;
 }
 
-export default function PoolCard({ pool, onJoin, onLeave }: PoolCardProps) {
+export default function PoolCard({ pool, onLeave }: PoolCardProps) {
   const [loading, setLoading] = useState(false);
-  const [modal, setModal] = useState<"join" | "leave" | null>(null);
-  const [bookingState, setBookingState] = useState<"idle" | "booking" | "success">("idle");
+  const [modal, setModal] = useState<"leave" | null>(null);
   const soon = isDepartingSoon(pool.departure_at);
 
   // Determine phone visibility
@@ -59,30 +55,11 @@ export default function PoolCard({ pool, onJoin, onLeave }: PoolCardProps) {
     return pool.host_phone_masked;
   })();
 
-  const handleAction = async (action: "leave") => {
+  const handleLeaveAction = async () => {
     setLoading(true);
     setModal(null);
     try {
       await onLeave?.(pool.id);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleJoinAction = async () => {
-    setLoading(true);
-    setBookingState("booking");
-    try {
-      const success = await onJoin?.(pool.id);
-      if (success) {
-        setBookingState("success");
-        await new Promise((resolve) => setTimeout(resolve, 1800)); // wait for full success animation (glow)
-        setModal(null);
-      } else {
-        setBookingState("idle");
-      }
-    } catch {
-      setBookingState("idle");
     } finally {
       setLoading(false);
     }
@@ -141,7 +118,7 @@ export default function PoolCard({ pool, onJoin, onLeave }: PoolCardProps) {
           <div>
             <span className="route-dot end" />
             <p>{pool.to_location}</p>
-            <small>est. {Math.round(40 + Math.random() * 30)} min</small>
+            <small>Travel time depends on traffic</small>
           </div>
         </div>
 
@@ -197,13 +174,13 @@ export default function PoolCard({ pool, onJoin, onLeave }: PoolCardProps) {
                   Leave
                 </button>
               ) : (
-                <button
+                <Link
+                  href={`/pool/${pool.id}`}
                   className="btn-solid btn btn-sm"
-                  onClick={() => { setBookingState("idle"); setModal("join"); }}
-                  disabled={loading || pool.available_seats === 0}
+                  aria-disabled={pool.available_seats === 0}
                 >
-                  {pool.available_seats === 0 ? "Full" : "Join pool"}
-                </button>
+                  {pool.available_seats === 0 ? "Full" : "Choose seat"}
+                </Link>
               )}
             </>
           )}
@@ -213,36 +190,13 @@ export default function PoolCard({ pool, onJoin, onLeave }: PoolCardProps) {
         </div>
       </article>
 
-      {modal === "join" && (
-        <Modal
-          title="Join this pool?"
-          message={`${pool.from_location} → ${pool.to_location} · ₹${pool.cost_per_person} · ${formatDeparture(pool.departure_at)}`}
-          confirmLabel="Join Pool"
-          onConfirm={handleJoinAction}
-          onCancel={() => {
-            if (!loading) {
-              setModal(null);
-              setBookingState("idle");
-            }
-          }}
-          loading={loading}
-        >
-          <CarBookingAnimation
-            state={bookingState}
-            totalSeats={pool.total_seats}
-            availableSeats={pool.available_seats}
-            carType={pool.car_type}
-          />
-        </Modal>
-      )}
-
       {modal === "leave" && (
         <Modal
           title="Leave this pool?"
           message="Your seat will be released and other students can take it."
           confirmLabel="Leave Pool"
           variant="danger"
-          onConfirm={() => handleAction("leave")}
+          onConfirm={handleLeaveAction}
           onCancel={() => setModal(null)}
           loading={loading}
         />

@@ -1,21 +1,18 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { assertSameOrigin, enforceRateLimit, handleApiError, requireUser } from "@/lib/api";
 
 type Params = { params: Promise<{ id: string }> };
 
-// DELETE /api/pools/:id/leave
-export async function DELETE(_: Request, { params }: Params) {
-  const { id } = await params;
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const { error } = await supabase
-    .from("pool_members")
-    .delete()
-    .eq("pool_id", id)
-    .eq("user_id", user.id);
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ success: true });
+export async function DELETE(request: Request, { params }: Params) {
+  try {
+    assertSameOrigin(request);
+    const { id } = await params;
+    const { user, auth } = await requireUser();
+    await enforceRateLimit(request, "pool-leave", 30, 60 * 60, user.id);
+    const { error } = await auth.rpc("leave_pool", { p_pool_id: id });
+    if (error) return NextResponse.json({ error: "You are not a member of this pool." }, { status: 409 });
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    return handleApiError(error);
+  }
 }

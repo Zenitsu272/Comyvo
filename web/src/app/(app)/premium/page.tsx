@@ -2,58 +2,42 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import { toast } from "@/components/ui/Toast";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { PhoneCall, Star, ShieldCheck, Crown } from "lucide-react";
 
 export default function PremiumPage() {
   const router = useRouter();
-  const supabase = createClient();
   const [loading, setLoading] = useState(true);
   const [requesting, setRequesting] = useState(false);
-  const [profile, setProfile] = useState<{ role: string; full_name: string | null } | null>(null);
+  const [profile, setProfile] = useState<{ role: string; full_name: string | null; request?: { status: string } | null } | null>(null);
 
   useEffect(() => {
     const fetchProfile = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      const response = await fetch("/api/premium", { cache: "no-store" });
+      if (response.status === 401) {
         router.push("/login");
         return;
       }
-      const { data } = await supabase
-        .from("users")
-        .select("role, full_name")
-        .eq("id", user.id)
-        .single();
-
-      setProfile(data);
+      setProfile(response.ok ? await response.json() : null);
       setLoading(false);
     };
     fetchProfile();
-  }, [supabase, router]);
+  }, [router]);
 
   const handleUpgrade = async () => {
     if (!profile) return;
     setRequesting(true);
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { error } = await supabase
-      .from("users")
-      .update({ role: "premium" })
-      .eq("id", user.id);
-
+    const response = await fetch("/api/premium", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) });
+    const data = await response.json();
     setRequesting(false);
-
-    if (error) {
-      toast("Upgrade request failed.", "error");
+    if (!response.ok) {
+      toast(data.error || "Upgrade request failed.", "error");
       return;
     }
-
-    toast("Congratulations! You are now a Premium Member! 🎉", "success");
-    setProfile((prev) => prev ? { ...prev, role: "premium" } : null);
+    toast("Premium request submitted for review.", "success");
+    setProfile((prev) => prev ? { ...prev, request: { status: "pending" } } : null);
   };
 
   if (loading) {
@@ -79,7 +63,7 @@ export default function PremiumPage() {
       <div className="screen-content">
         <div className="pool-detail-layout" style={{ maxWidth: 840, margin: "0 auto" }}>
           <div className="pool-detail-card" style={{ padding: 40, textAlign: "center" }}>
-            <p className="kicker" style={{ fontSize: "0.85rem", marginBottom: 12 }}>Commuto Club</p>
+            <p className="kicker" style={{ fontSize: "0.85rem", marginBottom: 12 }}>Comyvo Club</p>
             <h2 style={{ fontSize: "2.4rem", letterSpacing: "-0.03em" }}>Unlock full contact access</h2>
             <p className="helper" style={{ maxWidth: 480, margin: "0 auto 30px", fontSize: "1.05rem" }}>
               Get instant, early phone number visibility on any pool without needing to join it first.
@@ -117,6 +101,8 @@ export default function PremiumPage() {
               </div>
             ) : profile.role === "admin" ? (
               <span className="badge badge-neutral">Admin Tier</span>
+            ) : profile.request?.status === "pending" ? (
+              <span className="badge badge-warning">Premium review pending</span>
             ) : (
               <button
                 type="button"
@@ -125,7 +111,7 @@ export default function PremiumPage() {
                 onClick={handleUpgrade}
                 disabled={requesting}
               >
-                Unlock Premium (Dev Mode Free)
+                Request Premium Review
               </button>
             )}
           </div>

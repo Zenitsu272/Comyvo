@@ -1,40 +1,44 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { assertSameOrigin, enforceRateLimit, handleApiError, parseJson, profileComplete, requireUser } from "@/lib/api";
+import { profileSchema } from "@/lib/validation";
+import { decodeAmritaEmail } from "@/lib/auth";
 
-// GET /api/me
 export async function GET() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const { data: profile } = await supabase
-    .from("users")
-    .select("*")
-    .eq("id", user.id)
-    .single();
-
-  return NextResponse.json(profile ?? {});
+  try {
+    const { profile } = await requireUser();
+    return NextResponse.json({ ...profile, profile_complete: profileComplete(profile) });
+  } catch (error) {
+    return handleApiError(error);
+  }
 }
 
-// PUT /api/me
 export async function PUT(request: Request) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const body = await request.json();
-  const allowed = ["full_name", "roll_number", "phone", "department", "gender", "campus", "year_of_joining"];
-  const updates: Record<string, string> = {};
-  for (const key of allowed) {
-    if (key in body) updates[key] = body[key];
+  try {
+    assertSameOrigin(request);
+    const { user, profile, admin } = await requireUser();
+    await enforceRateLimit(request, "profile-update", 20, 60 * 60, user.id);
+    const input = await parseJson(request, profileSchema);
+    const decoded = decodeAmritaEmail(user.email || profile.email);
+    if (decoded.fullRollNumber && input.roll_number !== decoded.fullRollNumber) {
+      return NextResponse.json({ error: "Roll number must match your verified college email." }, { status: 400 });
+    }
+    const phone = input.phone || null;
+    const updates = {
+      ...input,
+      phone,
+      department: decoded.departmentCode || input.department,
+      campus: decoded.campus || input.campus,
+      year_of_joining: decoded.yearOfJoining || input.year_of_joining || null,
+      is_phone_verified: phone === profile.phone ? profile.is_phone_verified : false,
+      updated_at: new Date().toISOString(),
+    };
+    const { data, error } = await admin.from("users").update(updates).eq("id", user.id).select().single();
+    if (error) {
+      if (error.code === "23505") return NextResponse.json({ error: "That roll number is already registered." }, { status: 409 });
+      throw error;
+    }
+    return NextResponse.json(data);
+  } catch (error) {
+    return handleApiError(error);
   }
-
-  const { data, error } = await supabase
-    .from("users")
-    .upsert({ id: user.id, email: user.email!, ...updates })
-    .select()
-    .single();
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data);
 }

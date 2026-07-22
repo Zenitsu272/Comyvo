@@ -1,34 +1,27 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient, createClient } from "@/lib/supabase/server";
+import { assertSameOrigin, enforceRateLimit, handleApiError, parseJson } from "@/lib/api";
+import { verifyOtpSchema } from "@/lib/validation";
 
-// POST /api/auth/verify-otp
 export async function POST(request: Request) {
-  const { email, token } = await request.json();
-
-  if (!email || !token) {
-    return NextResponse.json({ error: "Email and token are required." }, { status: 400 });
+  try {
+    assertSameOrigin(request);
+    const { email, token } = await parseJson(request, verifyOtpSchema);
+    await enforceRateLimit(request, "otp-verify", 10, 15 * 60, email);
+    const supabase = await createClient();
+    const { data, error } = await supabase.auth.verifyOtp({ email, token, type: "email" });
+    if (error || !data.user) {
+      return NextResponse.json({ error: "Invalid or expired verification code." }, { status: 400 });
+    }
+    const admin = createAdminClient();
+    await admin.from("users").upsert({ id: data.user.id, email: data.user.email || email }, { onConflict: "id", ignoreDuplicates: true });
+    const { data: profile } = await admin.from("users").select("roll_number,full_name,status").eq("id", data.user.id).single();
+    if (profile?.status === "suspended") {
+      await supabase.auth.signOut();
+      return NextResponse.json({ error: "This account has been suspended." }, { status: 403 });
+    }
+    return NextResponse.json({ success: true, isProfileComplete: Boolean(profile?.roll_number && profile?.full_name) });
+  } catch (error) {
+    return handleApiError(error);
   }
-
-  const supabase = await createClient();
-  const { data, error } = await supabase.auth.verifyOtp({
-    email,
-    token,
-    type: "email",
-  });
-
-  if (error) {
-    console.error("Supabase OTP Verify Error:", error);
-    return NextResponse.json({ error: "Invalid or expired code." }, { status: 400 });
-  }
-
-  // Check if profile is complete
-  const { data: profile } = await supabase
-    .from("users")
-    .select("roll_number, full_name")
-    .eq("id", data.user!.id)
-    .single();
-
-  const isProfileComplete = !!(profile?.roll_number && profile?.full_name);
-
-  return NextResponse.json({ success: true, isProfileComplete });
 }

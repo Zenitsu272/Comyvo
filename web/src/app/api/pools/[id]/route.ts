@@ -1,141 +1,121 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { ApiError, assertSameOrigin, enforceRateLimit, handleApiError, parseJson, requireUser } from "@/lib/api";
+import { updatePoolSchema } from "@/lib/validation";
+import { escapeHtml, sendEmail } from "@/lib/email";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 type Params = { params: Promise<{ id: string }> };
 
-// GET /api/pools/:id
 export async function GET(_: Request, { params }: Params) {
-  const { id } = await params;
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const { data: pool, error } = await supabase
-    .from("pools_public")
-    .select("*")
-    .eq("id", id)
-    .single();
-
-  if (error || !pool) return NextResponse.json({ error: "Pool not found." }, { status: 404 });
-
-  const { data: membership } = await supabase
-    .from("pool_members")
-    .select("id")
-    .eq("pool_id", id)
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  const { data: profile } = await supabase.from("users").select("role, phone").eq("id", user.id).single();
-  const isMember = !!membership;
-  const isHost = pool.host_id === user.id;
-
-  // Fetch actual host phone if allowed
-  let hostPhoneFull: string | null = null;
-  if (
-    isHost || isMember ||
-    pool.contact_visibility === "always" ||
-    (pool.contact_visibility === "premium_only" && profile?.role === "premium") ||
-    profile?.role === "admin"
-  ) {
-    const { data: hostUser } = await supabase.from("users").select("phone").eq("id", pool.host_id).single();
-    hostPhoneFull = hostUser?.phone ?? null;
-  }
-
-  // Get members (roll numbers, no phone)
-  const { data: members } = await supabase
-    .from("pool_members")
-    .select("seat_no, user_id, users(roll_number, full_name)")
-    .eq("pool_id", id);
-
-  return NextResponse.json({
-    ...pool,
-    is_member: isMember,
-    is_host: isHost,
-    viewer_id: user.id,
-    viewer_role: profile?.role ?? "student",
-    host_phone_full: hostPhoneFull,
-    members: members ?? [],
-  });
-}
-
-// PUT /api/pools/:id — update (host only)
-export async function PUT(request: Request, { params }: Params) {
-  const { id } = await params;
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const body = await request.json();
-  const allowed = ["from_location", "to_location", "via_route", "car_type", "departure_at", "total_seats", "cost_per_person", "notes", "women_only", "contact_visibility", "status"];
-  const updates: Record<string, unknown> = {};
-  for (const key of allowed) {
-    if (key in body) updates[key] = body[key];
-  }
-
-  const { data, error } = await supabase
-    .from("pools")
-    .update(updates)
-    .eq("id", id)
-    .eq("host_id", user.id)
-    .select()
-    .single();
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
-  // Send Resend notifications to all co-riders if the pool is cancelled
-  if (updates.status === "cancelled" && process.env.RESEND_API_KEY) {
-    try {
-      const { data: members } = await supabase
-        .from("pool_members")
-        .select("users(email, full_name)")
-        .eq("pool_id", id);
-
-      if (members && members.length > 0) {
-        const emailPromises = members.map(async (m: any) => {
-          const rider = m.users;
-          if (rider?.email) {
-            await fetch("https://api.resend.com/emails", {
-              method: "POST",
-              headers: {
-                "Authorization": `Bearer ${process.env.RESEND_API_KEY}`,
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                from: "Commuto <onboarding@resend.dev>",
-                to: rider.email,
-                subject: "Your Commuto carpool has been cancelled ⚠️",
-                html: `
-                  <h3>Hello ${rider.full_name || 'Rider'},</h3>
-                  <p>The carpool from <strong>${data.from_location} &rarr; ${data.to_location}</strong> has been cancelled by the host.</p>
-                  <p>You can search and join other active pools on the Discover board: <a href="${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/discover">Search new pools</a>.</p>
-                `,
-              }),
-            });
-          }
-        });
-        await Promise.all(emailPromises);
-      }
-    } catch (err) {
-      console.error("Cancellation notifications dispatch failed:", err);
+  try {
+    const { id } = await params;
+    const { user, profile, admin } = await requireUser();
+    const { data: pool, error } = await admin.from("pools")
+      .select("*, host:users!pools_host_id_fkey(id,full_name,roll_number,phone,is_phone_verified,email)")
+      .eq("id", id).single();
+    if (error || !pool) return NextResponse.json({ error: "Pool not found." }, { status: 404 });
+    if (pool.women_only && profile.gender !== "female" && pool.host_id !== user.id && profile.role !== "admin") {
+      return NextResponse.json({ error: "Pool not found." }, { status: 404 });
     }
+    const { data: membership } = await admin.from("pool_members").select("id").eq("pool_id", id).eq("user_id", user.id).maybeSingle();
+    const isHost = pool.host_id === user.id;
+    const isMember = Boolean(membership);
+    if (!["active", "full"].includes(pool.status) && !isHost && !isMember && profile.role !== "admin") {
+      return NextResponse.json({ error: "Pool not found." }, { status: 404 });
+    }
+    const canSeeMembers = isHost || isMember || profile.role === "admin";
+    const { data: memberRows } = await admin.from("pool_members")
+      .select("seat_no,user_id,users!pool_members_user_id_fkey(roll_number,full_name)").eq("pool_id", id).order("seat_no");
+    const host = Array.isArray(pool.host) ? pool.host[0] : pool.host;
+    const canSeePhone = isHost || isMember || profile.role === "admin" || pool.contact_visibility === "always" ||
+      (pool.contact_visibility === "premium_only" && profile.role === "premium");
+    const members = (memberRows || []).map((member) => canSeeMembers
+      ? member
+      : { seat_no: member.seat_no, user_id: null, users: null });
+    const { host: _host, ...publicPool } = pool;
+    void _host;
+    return NextResponse.json({
+      ...publicPool,
+      host_name: host?.full_name ?? null,
+      host_roll: host?.roll_number ?? null,
+      host_phone_verified: Boolean(host?.is_phone_verified),
+      host_phone_masked: host?.phone ? `********${host.phone.slice(-2)}` : "Not provided",
+      host_phone_full: canSeePhone ? host?.phone ?? null : null,
+      is_member: isMember,
+      is_host: isHost,
+      viewer_id: user.id,
+      viewer_role: profile.role,
+      members,
+    });
+  } catch (error) {
+    return handleApiError(error);
   }
-
-  return NextResponse.json(data);
 }
 
-// DELETE /api/pools/:id — cancel (host only)
-export async function DELETE(_: Request, { params }: Params) {
-  const { id } = await params;
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+export async function PUT(request: Request, { params }: Params) {
+  try {
+    assertSameOrigin(request);
+    const { id } = await params;
+    const { user, admin } = await requireUser();
+    await enforceRateLimit(request, "pool-update", 30, 60 * 60, user.id);
+    const updates = await parseJson(request, updatePoolSchema);
+    const { data: current } = await admin.from("pools").select("*,pool_members(seat_no)").eq("id", id).single();
+    if (!current) throw new ApiError(404, "Pool not found.");
+    if (current.host_id !== user.id) throw new ApiError(403, "Only the host can update this pool.");
+    if (current.status === "cancelled" || current.status === "completed") throw new ApiError(409, "Closed pools cannot be edited.");
+    if (updates.departure_at && Date.parse(updates.departure_at) < Date.now() + 15 * 60_000) {
+      throw new ApiError(400, "Departure must be at least 15 minutes from now.");
+    }
+    const nextTotal = Number(updates.total_seats ?? current.total_seats);
+    const nextVehicle = String(updates.car_type ?? current.car_type) as "auto" | "sedan" | "suv";
+    const expectedCapacity = { auto: 3, sedan: 4, suv: 6 }[nextVehicle];
+    if (nextTotal !== expectedCapacity) throw new ApiError(400, `Seat capacity for ${nextVehicle} must be ${expectedCapacity}.`);
+    const memberSeats = (current.pool_members || []).map((member: { seat_no: number }) => member.seat_no);
+    if (memberSeats.some((seat: number) => seat > nextTotal)) throw new ApiError(409, "The new capacity excludes an already-booked seat.");
+    const memberCount = memberSeats.length;
+    const status = updates.status === "cancelled" || updates.status === "completed"
+      ? updates.status
+      : memberCount >= nextTotal - 1 ? "full" : "active";
+    const { data, error } = await admin.from("pools").update({
+      ...updates,
+      status,
+      total_seats: nextTotal,
+      available_seats: Math.max(0, nextTotal - 1 - memberCount),
+    }).eq("id", id).eq("host_id", user.id).select().single();
+    if (error) throw error;
+    if (status === "cancelled" && current.status !== "cancelled") await notifyCancellation(admin, id, data);
+    return NextResponse.json(data);
+  } catch (error) {
+    return handleApiError(error);
+  }
+}
 
-  const { error } = await supabase
-    .from("pools")
-    .update({ status: "cancelled" })
-    .eq("id", id)
-    .eq("host_id", user.id);
+export async function DELETE(request: Request, { params }: Params) {
+  try {
+    assertSameOrigin(request);
+    const { id } = await params;
+    const { user, admin } = await requireUser();
+    await enforceRateLimit(request, "pool-cancel", 10, 24 * 60 * 60, user.id);
+    const { data, error } = await admin.from("pools").update({ status: "cancelled" })
+      .eq("id", id).eq("host_id", user.id).in("status", ["active", "full"]).select().single();
+    if (error || !data) throw new ApiError(404, "Active pool not found.");
+    await notifyCancellation(admin, id, data);
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    return handleApiError(error);
+  }
+}
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ success: true });
+async function notifyCancellation(admin: SupabaseClient, poolId: string, pool: Record<string, unknown>) {
+  const { data: members } = await admin.from("pool_members")
+    .select("users!pool_members_user_id_fkey(email,full_name)").eq("pool_id", poolId);
+  await Promise.allSettled((members || []).map(async (member) => {
+    const rider = Array.isArray(member.users) ? member.users[0] : member.users;
+    if (!rider?.email) return;
+    await sendEmail({
+      to: rider.email,
+      subject: "Your Comyvo pool was cancelled",
+      html: `<h2>Ride cancelled</h2><p>The ride from <strong>${escapeHtml(String(pool.from_location || ""))}</strong> to <strong>${escapeHtml(String(pool.to_location || ""))}</strong> was cancelled by its host.</p>`,
+    });
+  }));
 }

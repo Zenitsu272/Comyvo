@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import PoolCard, { Pool } from "@/components/pools/PoolCard";
+import { Pool } from "@/components/pools/PoolCard";
 import { PoolCardSkeleton } from "@/components/ui/Skeleton";
 import Modal from "@/components/ui/Modal";
 import { toast } from "@/components/ui/Toast";
@@ -17,7 +17,7 @@ export default function MyPoolsPage() {
   useEffect(() => {
     const fetchAll = async () => {
       setLoading(true);
-      const res = await fetch("/api/pools");
+      const res = await fetch("/api/pools?scope=mine");
       if (!res.ok) { setLoading(false); return; }
       const data: Pool[] = await res.json();
       setAllPools(data);
@@ -102,7 +102,7 @@ export default function MyPoolsPage() {
                 </div>
                 <h3>{pool.from_location} → {pool.to_location}</h3>
                 <p style={{ fontSize: "0.88rem" }}>
-                  {pool.total_seats - pool.available_seats} joined · {pool.available_seats} seat{pool.available_seats !== 1 ? "s" : ""} left · {formatDeparture(pool.departure_at)}
+                  {Math.max(0, pool.total_seats - 1 - pool.available_seats)} joined · {pool.available_seats} seat{pool.available_seats !== 1 ? "s" : ""} left · {formatDeparture(pool.departure_at)}
                 </p>
 
                 {pool.is_member && !pool.is_host && (

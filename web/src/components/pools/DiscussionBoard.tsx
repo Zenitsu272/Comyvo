@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { toast } from "@/components/ui/Toast";
-import { Send, User } from "lucide-react";
+import { Send } from "lucide-react";
 
 interface Comment {
   id: string;

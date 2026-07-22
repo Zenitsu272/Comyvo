@@ -19,23 +19,34 @@ interface Metrics {
   total_pools: number;
   open_reports: number;
   premium_users: number;
+  users: number;
+}
+
+interface PremiumRequest {
+  id: string;
+  note: string | null;
+  created_at: string;
+  user: { full_name: string | null; roll_number: string | null; email: string } | null;
 }
 
 export default function AdminPage() {
   const [reports, setReports] = useState<Report[]>([]);
-  const [metrics, setMetrics] = useState<Metrics>({ total_pools: 0, open_reports: 0, premium_users: 0 });
+  const [premiumRequests, setPremiumRequests] = useState<PremiumRequest[]>([]);
+  const [metrics, setMetrics] = useState<Metrics>({ total_pools: 0, open_reports: 0, premium_users: 0, users: 0 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       const res = await fetch("/api/admin/reports");
       if (!res.ok) { setLoading(false); return; }
-      const data: Report[] = await res.json();
-      setReports(data);
+      const data = await res.json();
+      setReports(data.reports);
+      setPremiumRequests(data.premium_requests);
       setMetrics({
-        total_pools: 0,
-        open_reports: data.filter((r) => r.status === "open").length,
-        premium_users: 0,
+        total_pools: data.metrics.pools,
+        open_reports: data.reports.filter((report: Report) => report.status === "open").length,
+        premium_users: data.metrics.premium_users,
+        users: data.metrics.users,
       });
       setLoading(false);
     };
@@ -53,6 +64,8 @@ export default function AdminPage() {
     toast("Action completed.", "success");
     if (action === "resolve_report") {
       setReports((prev) => prev.map((r) => r.id === params.reportId ? { ...r, status: "resolved" } : r));
+    } else if (action === "review_premium") {
+      setPremiumRequests((previous) => previous.filter((request) => request.id !== params.requestId));
     }
   };
 
@@ -80,9 +93,9 @@ export default function AdminPage() {
         <div className="metric-grid">
           {[
             { label: "Open reports", value: loading ? "—" : metrics.open_reports },
-            { label: "Total reports", value: loading ? "—" : reports.length },
-            { label: "Resolved", value: loading ? "—" : reports.filter((r) => r.status === "resolved").length },
-            { label: "Dismissed", value: loading ? "—" : reports.filter((r) => r.status === "dismissed").length },
+            { label: "Registered users", value: loading ? "—" : metrics.users },
+            { label: "Total pools", value: loading ? "—" : metrics.total_pools },
+            { label: "Premium users", value: loading ? "—" : metrics.premium_users },
           ].map((m) => (
             <article key={m.label} className="metric-card">
               <span>{m.label}</span>
@@ -90,6 +103,25 @@ export default function AdminPage() {
             </article>
           ))}
         </div>
+
+        {premiumRequests.length > 0 && (
+          <>
+            <div className="section-heading" style={{ marginTop: 24 }}><h3>Premium requests</h3></div>
+            <div className="queue">
+              {premiumRequests.map((request) => (
+                <div className="queue-row" key={request.id}>
+                  <span className="badge badge-warning">Pending</span>
+                  <p>{request.user?.full_name || request.user?.roll_number || request.user?.email}<small style={{ display: "block" }}>{request.note || "No note provided"}</small></p>
+                  <strong>{new Date(request.created_at).toLocaleDateString("en-IN")}</strong>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <button className="btn-solid btn btn-sm" onClick={() => handleAction("review_premium", { requestId: request.id, status: "approved" })}>Approve</button>
+                    <button className="btn-ghost btn btn-sm" onClick={() => handleAction("review_premium", { requestId: request.id, status: "rejected" })}>Reject</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
 
         {/* Reports queue */}
         <div className="section-heading" style={{ marginTop: 24 }}>
@@ -133,7 +165,7 @@ export default function AdminPage() {
                   <div style={{ display: "flex", gap: 6 }}>
                     <button
                       className="btn-solid btn btn-sm"
-                      onClick={() => handleAction("resolve_report", { reportId: report.id })}
+                      onClick={() => handleAction("resolve_report", { reportId: report.id, status: "resolved" })}
                     >
                       Resolve
                     </button>

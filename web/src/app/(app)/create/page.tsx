@@ -33,14 +33,15 @@ export default function CreatePage() {
       const seats = params.get("total_seats");
       const cost = params.get("cost_per_person");
 
-      setForm((prev) => ({
-        ...prev,
-        from_location: from || prev.from_location,
-        to_location: to || prev.to_location,
-        car_type: car || prev.car_type,
-        total_seats: seats || (car === "auto" ? "3" : car === "suv" ? "6" : prev.total_seats),
-        cost_per_person: cost || (car === "auto" ? "30" : prev.cost_per_person),
-      }));
+      const timer = window.setTimeout(() => setForm((prev) => ({
+          ...prev,
+          from_location: from || prev.from_location,
+          to_location: to || prev.to_location,
+          car_type: car || prev.car_type,
+          total_seats: seats || (car === "auto" ? "3" : car === "suv" ? "6" : prev.total_seats),
+          cost_per_person: cost || (car === "auto" ? "30" : prev.cost_per_person),
+        })), 0);
+      return () => window.clearTimeout(timer);
     }
   }, []);
 
@@ -74,6 +75,7 @@ export default function CreatePage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         ...form,
+        departure_at: new Date(form.departure_at).toISOString(),
         total_seats: Number(form.total_seats),
         cost_per_person: Number(form.cost_per_person),
       }),
@@ -135,7 +137,7 @@ export default function CreatePage() {
                 </select>
               </label>
               <label>
-                <span>Available Seats (Auto-Set)</span>
+                <span>Vehicle Capacity (Host Included)</span>
                 <input id="total_seats" name="total_seats" type="number" value={form.total_seats} readOnly style={{ background: "var(--panel-soft)", color: "var(--muted)", cursor: "not-allowed" }} />
               </label>
               <label>

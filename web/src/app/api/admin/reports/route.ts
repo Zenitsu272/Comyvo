@@ -1,56 +1,53 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { assertSameOrigin, enforceRateLimit, handleApiError, parseJson, requireAdmin } from "@/lib/api";
+import { adminActionSchema } from "@/lib/validation";
 
-async function requireAdmin() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Unauthorized", status: 401, supabase: null };
-  const { data: profile } = await supabase.from("users").select("role").eq("id", user.id).single();
-  if (profile?.role !== "admin") return { error: "Forbidden", status: 403, supabase: null };
-  return { error: null, status: 200, supabase };
-}
-
-// GET /api/admin/reports
 export async function GET() {
-  const { error, status, supabase } = await requireAdmin();
-  if (error || !supabase) return NextResponse.json({ error }, { status });
-
-  const { data, error: dbError } = await supabase
-    .from("reports")
-    .select("*, reporter:reporter_id(roll_number, full_name), reported:reported_user_id(roll_number, full_name), pool:pool_id(from_location, to_location)")
-    .order("created_at", { ascending: false });
-
-  if (dbError) return NextResponse.json({ error: dbError.message }, { status: 500 });
-  return NextResponse.json(data);
+  try {
+    const { admin } = await requireAdmin();
+    const [{ data: reports, error }, { data: premiumRequests }, { count: users }, { count: pools }, { count: premiumUsers }] = await Promise.all([
+      admin.from("reports").select("*,reporter:users!reports_reporter_id_fkey(roll_number,full_name),reported:users!reports_reported_user_id_fkey(roll_number,full_name),pool:pools!reports_pool_id_fkey(from_location,to_location)").order("created_at", { ascending: false }).limit(200),
+      admin.from("premium_requests").select("*,user:users!premium_requests_user_id_fkey(full_name,roll_number,email)").eq("status", "pending").order("created_at"),
+      admin.from("users").select("id", { count: "exact", head: true }),
+      admin.from("pools").select("id", { count: "exact", head: true }),
+      admin.from("users").select("id", { count: "exact", head: true }).eq("role", "premium"),
+    ]);
+    if (error) throw error;
+    return NextResponse.json({ reports: reports || [], premium_requests: premiumRequests || [], metrics: { users: users || 0, pools: pools || 0, premium_users: premiumUsers || 0 } });
+  } catch (error) {
+    return handleApiError(error);
+  }
 }
 
-// GET /api/admin/users (all users)
 export async function POST(request: Request) {
-  const { error, status, supabase } = await requireAdmin();
-  if (error || !supabase) return NextResponse.json({ error }, { status });
-
-  const { action, userId, reportId, note } = await request.json();
-
-  if (action === "suspend") {
-    const { error: e } = await supabase.from("users").update({ role: "student" }).eq("id", userId);
-    if (e) return NextResponse.json({ error: e.message }, { status: 500 });
+  try {
+    assertSameOrigin(request);
+    const { user, admin } = await requireAdmin();
+    await enforceRateLimit(request, "admin-action", 120, 60 * 60, user.id);
+    const action = await parseJson(request, adminActionSchema);
+    let targetId: string;
+    if (action.action === "set_user_status") {
+      if (action.userId === user.id && action.status === "suspended") return NextResponse.json({ error: "You cannot suspend your own account." }, { status: 400 });
+      const { error } = await admin.from("users").update({ status: action.status }).eq("id", action.userId);
+      if (error) throw error;
+      targetId = action.userId;
+    } else if (action.action === "set_user_role") {
+      const { error } = await admin.from("users").update({ role: action.role }).eq("id", action.userId);
+      if (error) throw error;
+      targetId = action.userId;
+    } else if (action.action === "resolve_report") {
+      const { error } = await admin.from("reports").update({ status: action.status, admin_note: action.note || null, reviewed_by: user.id, reviewed_at: new Date().toISOString() }).eq("id", action.reportId);
+      if (error) throw error;
+      targetId = action.reportId;
+    } else {
+      const { data: premiumRequest, error } = await admin.from("premium_requests").update({ status: action.status, admin_note: action.note || null, reviewed_by: user.id, reviewed_at: new Date().toISOString() }).eq("id", action.requestId).eq("status", "pending").select("user_id").single();
+      if (error) throw error;
+      if (action.status === "approved") await admin.from("users").update({ role: "premium" }).eq("id", premiumRequest.user_id);
+      targetId = action.requestId;
+    }
+    await admin.from("audit_logs").insert({ actor_id: user.id, action: action.action, target_id: targetId, metadata: action });
     return NextResponse.json({ success: true });
+  } catch (error) {
+    return handleApiError(error);
   }
-
-  if (action === "approve_premium") {
-    const { error: e } = await supabase.from("users").update({ role: "premium" }).eq("id", userId);
-    if (e) return NextResponse.json({ error: e.message }, { status: 500 });
-    return NextResponse.json({ success: true });
-  }
-
-  if (action === "resolve_report") {
-    const { error: e } = await supabase
-      .from("reports")
-      .update({ status: "resolved", admin_note: note ?? null })
-      .eq("id", reportId);
-    if (e) return NextResponse.json({ error: e.message }, { status: 500 });
-    return NextResponse.json({ success: true });
-  }
-
-  return NextResponse.json({ error: "Unknown action." }, { status: 400 });
 }

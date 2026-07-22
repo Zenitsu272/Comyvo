@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import { useState, useEffect } from "react";
 import { Compass, PlusCircle, Car, Settings, ShieldAlert } from "lucide-react";
 
@@ -22,22 +21,16 @@ interface User {
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const supabase = createClient();
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
     const fetchUser = async () => {
-      const { data: { user: authUser } } = await supabase.auth.getUser();
-      if (!authUser) return;
-      const { data } = await supabase
-        .from("users")
-        .select("full_name, roll_number, role")
-        .eq("id", authUser.id)
-        .single();
-      setUser(data);
+      const response = await fetch("/api/me", { cache: "no-store" });
+      if (!response.ok) return;
+      setUser(await response.json());
     };
     fetchUser();
-  }, [supabase]);
+  }, []);
 
   const visibleNav = NAV_ITEMS.filter(
     (item) => !item.adminOnly || user?.role === "admin"
@@ -52,10 +45,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       <main className="app-shell">
         {/* ── Sidebar rail ── */}
         <aside className="rail">
-          <Link className="brand" href="/discover" aria-label="Commuto home">
+          <Link className="brand" href="/discover" aria-label="Comyvo home">
             <span className="brand-mark">C</span>
             <span>
-              <strong>Commuto</strong>
+              <strong>Comyvo</strong>
               <small>Campus carpool</small>
             </span>
           </Link>

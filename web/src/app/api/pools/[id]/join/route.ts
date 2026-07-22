@@ -1,111 +1,42 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { assertSameOrigin, enforceRateLimit, handleApiError, parseJson, profileComplete, requireUser } from "@/lib/api";
+import { joinPoolSchema } from "@/lib/validation";
+import { escapeHtml, sendEmail } from "@/lib/email";
 
 type Params = { params: Promise<{ id: string }> };
 
-// POST /api/pools/:id/join — join pool with specific seat number selection
 export async function POST(request: Request, { params }: Params) {
-  const { id } = await params;
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  // Read seat_no from request
-  const body = await request.json().catch(() => ({}));
-  const { seat_no } = body;
-
-  if (!seat_no || Number(seat_no) < 1) {
-    return NextResponse.json({ error: "Please select a specific seat to book." }, { status: 400 });
-  }
-
-  // Check pool
-  const { data: pool } = await supabase
-    .from("pools")
-    .select("available_seats, total_seats, status, host_id, women_only, from_location, to_location, car_type")
-    .eq("id", id)
-    .single();
-
-  if (!pool) return NextResponse.json({ error: "Pool not found." }, { status: 404 });
-  if (pool.host_id === user.id) return NextResponse.json({ error: "You can't join your own pool." }, { status: 400 });
-  if (pool.status !== "active") return NextResponse.json({ error: "Pool is not available." }, { status: 400 });
-  if (pool.available_seats <= 0) return NextResponse.json({ error: "Pool is full." }, { status: 400 });
-
-  // Validate seat number based on car_type (Host takes seat #1, riders take 2+)
-  const maxSeatMap: Record<string, number> = {
-    auto: 3,
-    sedan: 4,
-    suv: 6,
-  };
-  const maxSeat = maxSeatMap[pool.car_type || "sedan"] || 4;
-
-  if (Number(seat_no) < 1 || Number(seat_no) > maxSeat) {
-    return NextResponse.json({ error: `Invalid seat selection for this vehicle.` }, { status: 400 });
-  }
-
-  if (Number(seat_no) === 1) {
-    return NextResponse.json({ error: "Seat #1 is occupied by the host student." }, { status: 400 });
-  }
-
-  // Women-only check
-  if (pool.women_only) {
-    const { data: profile } = await supabase.from("users").select("gender").eq("id", user.id).single();
-    if (profile?.gender !== "female") {
-      return NextResponse.json({ error: "This pool is for women students only." }, { status: 403 });
+  try {
+    assertSameOrigin(request);
+    const { id } = await params;
+    const { user, profile, auth, admin } = await requireUser();
+    if (!profileComplete(profile)) return NextResponse.json({ error: "Complete your profile before joining a pool." }, { status: 403 });
+    await enforceRateLimit(request, "pool-join", 30, 60 * 60, user.id);
+    const { seat_no } = await parseJson(request, joinPoolSchema);
+    const { error } = await auth.rpc("join_pool", { p_pool_id: id, p_seat_no: seat_no });
+    if (error) {
+      const message = error.message.includes("already") ? "You have already joined this pool."
+        : error.message.includes("seat") ? error.message
+          : error.message.includes("women") ? "This pool is for women students only."
+            : "This pool can no longer be joined.";
+      return NextResponse.json({ error: message }, { status: 409 });
     }
-  }
 
-  // Join and book seat
-  const { error } = await supabase
-    .from("pool_members")
-    .insert({ pool_id: id, user_id: user.id, seat_no: Number(seat_no) });
-
-  if (error) {
-    if (error.code === "23505") {
-      if (error.message.includes("seat_no")) {
-        return NextResponse.json({ error: "This seat has already been taken by another member. Please choose another seat." }, { status: 400 });
-      }
-      return NextResponse.json({ error: "You have already joined this pool." }, { status: 400 });
-    }
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  // Send Resend Email Notification
-  if (process.env.RESEND_API_KEY) {
-    try {
-      const [hostRes, joinerRes] = await Promise.all([
-        supabase.from("users").select("email, full_name").eq("id", pool.host_id).single(),
-        supabase.from("users").select("roll_number, full_name").eq("id", user.id).single()
-      ]);
-
-      if (hostRes.data?.email) {
-        await fetch("https://api.resend.com/emails", {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${process.env.RESEND_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            from: "Commuto <onboarding@resend.dev>",
-            to: hostRes.data.email,
-            subject: "New rider joined your campus carpool! 🚗",
-            html: `
-              <h3>Hello ${hostRes.data.full_name || 'Host'}!</h3>
-              <p>A new student has joined your Commuto carpool.</p>
-              <ul>
-                <li><strong>Rider:</strong> ${joinerRes.data?.full_name || 'Verified Student'}</li>
-                <li><strong>Roll Number:</strong> ${joinerRes.data?.roll_number || '—'}</li>
-                <li><strong>Seat Booked:</strong> Seat #${seat_no}</li>
-                <li><strong>Route:</strong> ${pool.from_location} &rarr; ${pool.to_location}</li>
-              </ul>
-              <p><a href="${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/my-pools">Click here to view your pool members and contact details</a>.</p>
-            `,
-          }),
+    const { data: pool } = await admin.from("pools").select("from_location,to_location,host:users!pools_host_id_fkey(email,full_name)").eq("id", id).single();
+    const host = Array.isArray(pool?.host) ? pool.host[0] : pool?.host;
+    if (host?.email) {
+      try {
+        await sendEmail({
+          to: host.email,
+          subject: "A rider joined your Comyvo pool",
+          html: `<h2>New rider joined</h2><p>${escapeHtml(profile.full_name || profile.roll_number || "A verified student")} booked seat ${seat_no} on your ride from <strong>${escapeHtml(pool?.from_location || "")}</strong> to <strong>${escapeHtml(pool?.to_location || "")}</strong>.</p>`,
         });
+      } catch (emailError) {
+        console.error("Join notification failed:", emailError);
       }
-    } catch (err) {
-      console.error("Resend email notification failed:", err);
     }
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    return handleApiError(error);
   }
-
-  return NextResponse.json({ success: true });
 }

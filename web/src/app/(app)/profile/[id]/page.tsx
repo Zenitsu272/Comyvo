@@ -4,7 +4,7 @@ import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@/components/ui/Toast";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { ShieldCheck, AlertTriangle, Car, Calendar, Award, Mail } from "lucide-react";
+import { ShieldCheck, AlertTriangle, Car, Calendar } from "lucide-react";
 import { DecodedStudent } from "@/lib/auth";
 
 interface UserProfile {
@@ -17,7 +17,6 @@ interface UserProfile {
   year_of_joining: number | null;
   role: "student" | "premium" | "admin";
   is_phone_verified: boolean;
-  email: string;
   decoded: DecodedStudent;
   stats: {
     hosted: number;

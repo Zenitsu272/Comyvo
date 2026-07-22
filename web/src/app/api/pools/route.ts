@@ -1,115 +1,104 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { assertSameOrigin, enforceRateLimit, handleApiError, parseJson, profileComplete, requireUser } from "@/lib/api";
+import { createPoolSchema } from "@/lib/validation";
 
-// GET /api/pools — list with filters
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const supabase = await createClient();
+type HostRecord = { id: string; full_name: string | null; roll_number: string | null; phone: string | null; is_phone_verified: boolean };
+type PoolRecord = Record<string, unknown> & { id: string; host_id: string; contact_visibility: string; women_only: boolean; host: HostRecord | HostRecord[] | null };
 
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  let query = supabase
-    .from("pools_public")
-    .select("*")
-    .in("status", ["active", "full"])
-    .order("departure_at", { ascending: true });
-
-  const to = searchParams.get("to");
-  const from = searchParams.get("from");
-  const date = searchParams.get("date");
-  const womenOnly = searchParams.get("women_only");
-  const campus = searchParams.get("campus");
-  const carType = searchParams.get("car_type");
-
-  // If a destination is searched, match EITHER to_location OR via_route!
-  if (to) {
-    query = query.or(`to_location.ilike.%${to}%,via_route.ilike.%${to}%`);
-  }
-  if (from) {
-    query = query.ilike("from_location", `%${from}%`);
-  }
-  if (carType) {
-    query = query.eq("car_type", carType);
-  }
-  if (date) {
-    const start = new Date(date);
-    const end = new Date(date);
-    end.setDate(end.getDate() + 1);
-    query = query.gte("departure_at", start.toISOString()).lt("departure_at", end.toISOString());
-  }
-  if (womenOnly === "true") query = query.eq("women_only", true);
-  if (campus) query = query.eq("campus", campus);
-
-  const { data, error } = await query.limit(50);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
-  // Get member IDs for this user
-  const poolIds = (data ?? []).map((p) => p.id);
-  const { data: memberships } = poolIds.length
-    ? await supabase.from("pool_members").select("pool_id").eq("user_id", user.id).in("pool_id", poolIds)
-    : { data: [] };
-
-  const memberSet = new Set((memberships ?? []).map((m) => m.pool_id));
-
-  // Get user role
-  const { data: profile } = await supabase.from("users").select("role").eq("id", user.id).single();
-
-  const enriched = (data ?? []).map((pool) => ({
-    ...pool,
-    is_member: memberSet.has(pool.id),
-    is_host: pool.host_id === user.id,
-    viewer_role: profile?.role ?? "student",
-    host_phone_full:
-      (profile?.role === "admin") ||
-      (pool.contact_visibility === "always") ||
-      (pool.contact_visibility === "premium_only" && profile?.role === "premium") ||
-      memberSet.has(pool.id) ||
-      pool.host_id === user.id
-        ? pool.host_phone_masked
-        : null,
-  }));
-
-  return NextResponse.json(enriched);
+function cleanSearch(value: string | null): string | null {
+  if (!value) return null;
+  const cleaned = value.trim().replace(/[^\p{L}\p{N} .'-]/gu, "").slice(0, 80);
+  return cleaned || null;
 }
 
-// POST /api/pools — create
-export async function POST(request: Request) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+function poolResponse(pool: PoolRecord, viewer: { id: string; role: string }, memberships: Set<string>) {
+  const host = Array.isArray(pool.host) ? pool.host[0] : pool.host;
+  const isHost = pool.host_id === viewer.id;
+  const isMember = memberships.has(pool.id);
+  const phoneVisible = Boolean(host && (
+    isHost || isMember || viewer.role === "admin" || pool.contact_visibility === "always" ||
+    (pool.contact_visibility === "premium_only" && viewer.role === "premium")
+  ));
+  const phone = host?.phone || "";
+  const { host: _host, ...rest } = pool;
+  void _host;
+  return {
+    ...rest,
+    host_name: host?.full_name ?? null,
+    host_roll: host?.roll_number ?? null,
+    host_phone_verified: Boolean(host?.is_phone_verified),
+    host_phone_masked: phone ? `********${phone.slice(-2)}` : "Not provided",
+    host_phone_full: phoneVisible ? phone : null,
+    is_member: isMember,
+    is_host: isHost,
+    viewer_role: viewer.role,
+  };
+}
 
-  const body = await request.json();
-  const {
-    from_location, to_location, via_route, car_type, departure_at,
-    total_seats, cost_per_person, notes,
-    campus, women_only, contact_visibility,
-  } = body;
+export async function GET(request: Request) {
+  try {
+    const { user, profile, admin } = await requireUser();
+    const { searchParams } = new URL(request.url);
+    const scope = searchParams.get("scope");
+    const membershipQuery = admin.from("pool_members").select("pool_id").eq("user_id", user.id);
+    const { data: membershipRows } = await membershipQuery;
+    const memberships = new Set((membershipRows || []).map((row) => row.pool_id as string));
+    let query = admin.from("pools").select("*, host:users!pools_host_id_fkey(id,full_name,roll_number,phone,is_phone_verified)");
 
-  if (!from_location || !to_location || !departure_at || !total_seats || !cost_per_person) {
-    return NextResponse.json({ error: "Missing required fields." }, { status: 400 });
+    if (scope === "mine") {
+      const ids = [...memberships];
+      query = ids.length
+        ? query.or(`host_id.eq.${user.id},id.in.(${ids.join(",")})`)
+        : query.eq("host_id", user.id);
+    } else {
+      query = query.in("status", ["active", "full"]).gte("departure_at", new Date().toISOString());
+      if (profile.gender !== "female") query = query.eq("women_only", false);
+      const to = cleanSearch(searchParams.get("to"));
+      const from = cleanSearch(searchParams.get("from"));
+      const date = searchParams.get("date");
+      const campus = cleanSearch(searchParams.get("campus"));
+      const carType = searchParams.get("car_type");
+      if (to) query = query.or(`to_location.ilike.%${to}%,via_route.ilike.%${to}%`);
+      if (from) query = query.ilike("from_location", `%${from}%`);
+      if (campus) query = query.eq("campus", campus);
+      if (["auto", "sedan", "suv"].includes(carType || "")) query = query.eq("car_type", carType!);
+      if (searchParams.get("women_only") === "true") query = query.eq("women_only", true);
+      if (date && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        const offset = Math.max(-840, Math.min(840, Number(searchParams.get("timezone_offset")) || 0));
+        const [year, month, day] = date.split("-").map(Number);
+        const start = new Date(Date.UTC(year, month - 1, day) + offset * 60_000);
+        query = query.gte("departure_at", start.toISOString()).lt("departure_at", new Date(start.getTime() + 86_400_000).toISOString());
+      }
+    }
+    const { data, error } = await query.order("departure_at", { ascending: true }).limit(scope === "mine" ? 100 : 50);
+    if (error) throw error;
+    return NextResponse.json((data as PoolRecord[] || []).map((pool) => poolResponse(pool, { id: user.id, role: profile.role }, memberships)));
+  } catch (error) {
+    return handleApiError(error);
   }
+}
 
-  const { data, error } = await supabase
-    .from("pools")
-    .insert({
+export async function POST(request: Request) {
+  try {
+    assertSameOrigin(request);
+    const { user, profile, admin } = await requireUser();
+    if (!profileComplete(profile)) return NextResponse.json({ error: "Complete your profile before hosting a pool." }, { status: 403 });
+    await enforceRateLimit(request, "pool-create", 10, 24 * 60 * 60, user.id);
+    const pool = await parseJson(request, createPoolSchema);
+    if (pool.women_only && profile.gender !== "female") {
+      return NextResponse.json({ error: "Only women students can host a women-only pool." }, { status: 403 });
+    }
+    const { data, error } = await admin.from("pools").insert({
+      ...pool,
       host_id: user.id,
-      from_location,
-      to_location,
-      via_route: via_route || null,
-      car_type: car_type || "sedan",
-      departure_at,
-      total_seats: Number(total_seats),
-      available_seats: Number(total_seats),
-      cost_per_person: Number(cost_per_person),
-      notes,
-      campus: campus ?? "Coimbatore",
-      women_only: women_only ?? false,
-      contact_visibility: contact_visibility ?? "after_join",
-    })
-    .select()
-    .single();
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data, { status: 201 });
+      available_seats: pool.total_seats - 1,
+      via_route: pool.via_route || null,
+      notes: pool.notes || null,
+      status: "active",
+    }).select().single();
+    if (error) throw error;
+    return NextResponse.json(data, { status: 201 });
+  } catch (error) {
+    return handleApiError(error);
+  }
 }

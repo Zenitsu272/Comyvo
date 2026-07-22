@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Suspense, useEffect } from "react";
+import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { toast } from "@/components/ui/Toast";
@@ -33,18 +33,6 @@ function SignupForm() {
     year_of_joining: prefillYear,
   });
 
-  // Update when params load
-  useEffect(() => {
-    setForm((prev) => ({
-      ...prev,
-      roll_number: prefillRoll || prev.roll_number,
-      campus: prefillCampus || prev.campus,
-      department: prefillDept || prev.department,
-      year_of_joining: prefillYear || prev.year_of_joining,
-    }));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
@@ -67,7 +55,7 @@ function SignupForm() {
     setLoading(false);
 
     if (!res.ok) { toast(data.error, "error"); return; }
-    toast("Welcome to Commuto! 🎉", "success");
+    toast("Welcome to Comyvo!", "success");
     setTimeout(() => router.push("/discover"), 700);
   };
 
@@ -79,7 +67,7 @@ function SignupForm() {
         <Link href="/" className="brand" style={{ display: "inline-flex", justifyContent: "center", gap: 12 }}>
           <span className="brand-mark" style={{ width: 40, height: 40, fontSize: "1rem" }}>C</span>
           <span style={{ textAlign: "left" }}>
-            <strong style={{ display: "block" }}>Commuto</strong>
+            <strong style={{ display: "block" }}>Comyvo</strong>
             <small style={{ display: "block", color: "var(--muted)", fontSize: "0.76rem" }}>Campus carpool</small>
           </span>
         </Link>
@@ -207,7 +195,7 @@ function SignupForm() {
           </p>
 
           <button type="submit" className="btn-solid btn btn-wide btn-lg" disabled={loading}>
-            {loading ? "Saving…" : "Complete profile & enter Commuto →"}
+            {loading ? "Saving…" : "Complete profile & enter Comyvo →"}
           </button>
         </form>
       </div>

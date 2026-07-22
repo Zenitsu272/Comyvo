@@ -4,11 +4,12 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import PoolCard, { Pool } from "@/components/pools/PoolCard";
 import { PoolCardSkeleton } from "@/components/ui/Skeleton";
 import { toast } from "@/components/ui/Toast";
-import { Search, Compass, SlidersHorizontal, ArrowUpDown, ShieldCheck } from "lucide-react";
+import { Search, SlidersHorizontal } from "lucide-react";
 
 export default function DiscoverPage() {
   const [pools, setPools] = useState<Pool[]>([]);
   const [loading, setLoading] = useState(true);
+  const [referenceTime, setReferenceTime] = useState(0);
   const [selectedPulseRoute, setSelectedPulseRoute] = useState<"station" | "bus" | "airport" | "gandhipuram">("station");
 
   const mapConfig = {
@@ -66,7 +67,7 @@ export default function DiscoverPage() {
 
   const pulseActiveCount = pulsePools.filter((p) => p.status === "active" || p.status === "full").length;
   const pulseSoonCount = pulsePools.filter((p) => {
-    const diff = new Date(p.departure_at).getTime() - Date.now();
+    const diff = new Date(p.departure_at).getTime() - referenceTime;
     return diff > 0 && diff <= 5 * 3600000;
   }).length;
   const pulseAvgFare = useMemo(() => {
@@ -90,6 +91,7 @@ export default function DiscoverPage() {
     if (filters.to) params.set("to", filters.to);
     if (filters.from) params.set("from", filters.from);
     if (filters.date) params.set("date", filters.date);
+    if (filters.date) params.set("timezone_offset", String(new Date().getTimezoneOffset()));
     if (filters.women_only) params.set("women_only", "true");
     if (filters.car_type) params.set("car_type", filters.car_type);
 
@@ -115,6 +117,7 @@ export default function DiscoverPage() {
     }
 
     setPools(data);
+    setReferenceTime(Date.now());
     setLoading(false);
   }, [filters]);
 
@@ -126,15 +129,6 @@ export default function DiscoverPage() {
     return () => clearTimeout(timer);
   }, [filters, fetchPools]);
 
-  const handleJoin = async (id: string) => {
-    const res = await fetch(`/api/pools/${id}/join`, { method: "POST" });
-    const data = await res.json();
-    if (!res.ok) { toast(data.error, "error"); return false; }
-    toast("You've joined the pool!", "success");
-    fetchPools();
-    return true;
-  };
-
   const handleLeave = async (id: string) => {
     const res = await fetch(`/api/pools/${id}/leave`, { method: "DELETE" });
     const data = await res.json();
@@ -144,7 +138,7 @@ export default function DiscoverPage() {
   };
 
   const soon = pools.filter((p) => {
-    const diff = new Date(p.departure_at).getTime() - Date.now();
+    const diff = new Date(p.departure_at).getTime() - referenceTime;
     return diff > 0 && diff <= 5 * 3600000;
   });
 
@@ -170,7 +164,7 @@ export default function DiscoverPage() {
             {soon.length > 0 && (
               <div className="trip-summary">
                 <span className="summary-label">Next departure</span>
-                <strong>{(() => { const diff = new Date(soon[0].departure_at).getTime() - Date.now(); const h = Math.floor(diff / 3600000); const m = Math.floor((diff % 3600000) / 60000); return `${h}h ${m}m`; })()}</strong>
+                <strong>{(() => { const diff = new Date(soon[0].departure_at).getTime() - referenceTime; const h = Math.floor(diff / 3600000); const m = Math.floor((diff % 3600000) / 60000); return `${h}h ${m}m`; })()}</strong>
                 <small>{soon[0].from_location} → {soon[0].to_location}</small>
               </div>
             )}
@@ -361,7 +355,7 @@ export default function DiscoverPage() {
               </div>
             ) : (
               pools.map((pool) => (
-                <PoolCard key={pool.id} pool={pool} onJoin={handleJoin} onLeave={handleLeave} />
+                <PoolCard key={pool.id} pool={pool} onLeave={handleLeave} />
               ))
             )}
           </section>
@@ -372,7 +366,7 @@ export default function DiscoverPage() {
               <h3 style={{ margin: 0 }}>Route pulse</h3>
               <select
                 value={selectedPulseRoute}
-                onChange={(e) => setSelectedPulseRoute(e.target.value as any)}
+                onChange={(e) => setSelectedPulseRoute(e.target.value as typeof selectedPulseRoute)}
                 style={{
                   fontSize: "0.78rem",
                   fontWeight: 700,

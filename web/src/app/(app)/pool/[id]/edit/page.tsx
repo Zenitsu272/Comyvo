@@ -24,7 +24,7 @@ export default function EditPoolPage({ params }: { params: Promise<{ id: string 
     luggage_capacity: "any",
     women_only: false,
     contact_visibility: "after_join" as "always" | "premium_only" | "after_join",
-    status: "active" as "active" | "full" | "cancelled" | "completed",
+    status: "active" as "active" | "cancelled" | "completed",
   });
 
   useEffect(() => {
@@ -59,7 +59,7 @@ export default function EditPoolPage({ params }: { params: Promise<{ id: string 
         luggage_capacity: data.luggage_capacity ?? "any",
         women_only: data.women_only,
         contact_visibility: data.contact_visibility,
-        status: data.status,
+        status: data.status === "full" ? "active" : data.status,
       });
       setLoading(false);
     };
@@ -83,6 +83,7 @@ export default function EditPoolPage({ params }: { params: Promise<{ id: string 
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         ...form,
+        departure_at: new Date(form.departure_at).toISOString(),
         total_seats: Number(form.total_seats),
         cost_per_person: Number(form.cost_per_person),
       }),
@@ -150,7 +151,7 @@ export default function EditPoolPage({ params }: { params: Promise<{ id: string 
               </label>
               <label>
                 <span>Total seats</span>
-                <input id="total_seats" name="total_seats" type="number" min="1" max="8" value={form.total_seats} onChange={handleChange} />
+                <input id="total_seats" name="total_seats" type="number" min="2" max="8" value={form.total_seats} readOnly style={{ background: "var(--panel-soft)", color: "var(--muted)", cursor: "not-allowed" }} />
               </label>
               <label>
                 <span>Cost per person (₹)</span>
@@ -174,7 +175,6 @@ export default function EditPoolPage({ params }: { params: Promise<{ id: string 
                 <span>Pool Status</span>
                 <select id="status" name="status" value={form.status} onChange={handleChange}>
                   <option value="active">Active (Available to join)</option>
-                  <option value="full">Full (No seats available)</option>
                   <option value="cancelled">Cancelled (Trip aborted)</option>
                   <option value="completed">Completed (Trip finished)</option>
                 </select>

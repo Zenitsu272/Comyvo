@@ -1,6 +1,6 @@
 {
-  "name": "Commuto Campus Carpool",
-  "short_name": "Commuto",
+  "name": "Comyvo Campus Carpool",
+  "short_name": "Comyvo",
   "description": "Verified campus carpool network for Amrita students.",
   "start_url": "/discover",
   "display": "standalone",

@@ -1,34 +1,18 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { assertSameOrigin, enforceRateLimit, handleApiError, parseJson, requireUser } from "@/lib/api";
+import { reportSchema } from "@/lib/validation";
 
-// POST /api/reports — file a report against a user or pool
 export async function POST(request: Request) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const body = await request.json();
-  const { reported_user_id, pool_id, reason } = body;
-
-  if (!reason) {
-    return NextResponse.json({ error: "Reason is required." }, { status: 400 });
+  try {
+    assertSameOrigin(request);
+    const { user, admin } = await requireUser();
+    await enforceRateLimit(request, "report", 5, 24 * 60 * 60, user.id);
+    const report = await parseJson(request, reportSchema);
+    if (report.reported_user_id === user.id) return NextResponse.json({ error: "You cannot report yourself." }, { status: 400 });
+    const { data, error } = await admin.from("reports").insert({ ...report, reporter_id: user.id, status: "open", admin_note: null }).select().single();
+    if (error) throw error;
+    return NextResponse.json(data, { status: 201 });
+  } catch (error) {
+    return handleApiError(error);
   }
-
-  const { data, error } = await supabase
-    .from("reports")
-    .insert({
-      reporter_id: user.id,
-      reported_user_id: reported_user_id || null,
-      pool_id: pool_id || null,
-      reason,
-      status: "open",
-    })
-    .select()
-    .single();
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  return NextResponse.json(data, { status: 201 });
 }

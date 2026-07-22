@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ShieldCheck, EyeOff, Users, Zap, AlertOctagon, CirclePercent, ArrowRight } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Commuto — Verified Campus Carpool for Amrita Students",
+  title: "Comyvo — Verified Campus Carpool for Amrita Students",
   description:
     "Find or host carpools with verified Amrita students. Safe, affordable rides to Coimbatore railway station, airport, and beyond.",
 };
@@ -27,7 +27,7 @@ export default function LandingPage() {
         <div className="brand" style={{ margin: 0, display: "flex", alignItems: "center", gap: 12 }}>
           <span className="brand-mark" style={{ width: 38, height: 38, fontSize: "0.95rem" }}>C</span>
           <span style={{ textAlign: "left" }}>
-            <strong style={{ display: "block", fontSize: "0.95rem" }}>Commuto</strong>
+            <strong style={{ display: "block", fontSize: "0.95rem" }}>Comyvo</strong>
             <small style={{ display: "block", color: "var(--muted)", fontSize: "0.72rem" }}>Campus carpool</small>
           </span>
         </div>
@@ -101,7 +101,7 @@ export default function LandingPage() {
       }}>
         <div style={{ textAlign: "center", marginBottom: 44 }}>
           <p className="kicker">Process</p>
-          <h2 style={{ fontSize: "2rem" }}>How Commuto works</h2>
+          <h2 style={{ fontSize: "2rem" }}>How Comyvo works</h2>
         </div>
 
         <div style={{
@@ -159,7 +159,7 @@ export default function LandingPage() {
             { icon: Users, title: "Women-Only Option", desc: "Female hosts can restrict pool visibility to women students for extra security." },
             { icon: Zap, title: "Urgent Priority Sorting", desc: "Pools leaving within 5 hours rise to the top automatically so you find last-minute rides." },
             { icon: AlertOctagon, title: "Safety Moderation", desc: "Easily report bad behavior. Admins review reports and suspend bad actors instantly." },
-            { icon: CirclePercent, title: "Zero Commission", desc: "Commuto is free. Split exact cab fares directly with peers without middleman fees." }
+            { icon: CirclePercent, title: "Zero Commission", desc: "Comyvo is free. Split exact cab fares directly with peers without middleman fees." }
           ].map((f) => {
             const Icon = f.icon;
             return (
@@ -194,7 +194,7 @@ export default function LandingPage() {
         flexWrap: "wrap",
         gap: 16
       }}>
-        <span>© 2026 Commuto. Created for Amrita Vishwa Vidyapeetham.</span>
+        <span>© 2026 Comyvo. Created for Amrita Vishwa Vidyapeetham.</span>
         <span>Coimbatore Campus</span>
       </footer>
     </div>

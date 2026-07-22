@@ -1,47 +1,47 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { ApiError, assertSameOrigin, enforceRateLimit, handleApiError, parseJson, requireUser } from "@/lib/api";
+import { commentSchema } from "@/lib/validation";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 type Params = { params: Promise<{ id: string }> };
 
-// GET /api/pools/:id/comments — load coordination chat
-export async function GET(_: Request, { params }: Params) {
-  const { id } = await params;
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const { data: comments, error } = await supabase
-    .from("comments")
-    .select("*, users(roll_number, full_name)")
-    .eq("pool_id", id)
-    .order("created_at", { ascending: true });
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(comments || []);
+async function assertParticipant(admin: SupabaseClient, poolId: string, userId: string, role: string) {
+  if (role === "admin") return;
+  const [{ data: pool }, { data: membership }] = await Promise.all([
+    admin.from("pools").select("host_id").eq("id", poolId).single(),
+    admin.from("pool_members").select("id").eq("pool_id", poolId).eq("user_id", userId).maybeSingle(),
+  ]);
+  if (!pool || (pool.host_id !== userId && !membership)) throw new ApiError(403, "Join this pool to access its discussion.");
 }
 
-// POST /api/pools/:id/comments — post message in chat
-export async function POST(request: Request, { params }: Params) {
-  const { id } = await params;
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const { message } = await request.json();
-  if (!message || !message.trim()) {
-    return NextResponse.json({ error: "Message content required." }, { status: 400 });
+export async function GET(_: Request, { params }: Params) {
+  try {
+    const { id } = await params;
+    const { user, profile, admin } = await requireUser();
+    await assertParticipant(admin, id, user.id, profile.role);
+    const { data, error } = await admin.from("comments")
+      .select("id,pool_id,user_id,message,created_at,users!comments_user_id_fkey(roll_number,full_name)")
+      .eq("pool_id", id).order("created_at", { ascending: true }).limit(200);
+    if (error) throw error;
+    return NextResponse.json(data || []);
+  } catch (error) {
+    return handleApiError(error);
   }
+}
 
-  const { data, error } = await supabase
-    .from("comments")
-    .insert({
-      pool_id: id,
-      user_id: user.id,
-      message: message.trim(),
-    })
-    .select("*, users(roll_number, full_name)")
-    .single();
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data, { status: 201 });
+export async function POST(request: Request, { params }: Params) {
+  try {
+    assertSameOrigin(request);
+    const { id } = await params;
+    const { user, profile, admin } = await requireUser();
+    await assertParticipant(admin, id, user.id, profile.role);
+    await enforceRateLimit(request, "comment", 30, 5 * 60, user.id);
+    const { message } = await parseJson(request, commentSchema);
+    const { data, error } = await admin.from("comments").insert({ pool_id: id, user_id: user.id, message })
+      .select("id,pool_id,user_id,message,created_at,users!comments_user_id_fkey(roll_number,full_name)").single();
+    if (error) throw error;
+    return NextResponse.json(data, { status: 201 });
+  } catch (error) {
+    return handleApiError(error);
+  }
 }

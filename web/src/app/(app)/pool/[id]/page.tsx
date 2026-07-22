@@ -47,7 +47,8 @@ export default function PoolDetailPage({ params }: { params: Promise<{ id: strin
   };
 
   useEffect(() => {
-    fetchPool();
+    const timer = window.setTimeout(() => void fetchPool(), 0);
+    return () => window.clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
@@ -302,7 +303,7 @@ export default function PoolDetailPage({ params }: { params: Promise<{ id: strin
               <div style={{ display: "grid", gap: 10, fontSize: "0.85rem", marginBottom: 14 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", color: "var(--muted)" }}>
                   <span>Total Vehicle Cost:</span>
-                  <strong>₹{pool.cost_per_person * (pool.total_seats + 1)}</strong>
+                    <strong>₹{pool.cost_per_person * pool.total_seats}</strong>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", color: "var(--ink)" }}>
                   <span>Your Carpool Share:</span>
@@ -312,13 +313,13 @@ export default function PoolDetailPage({ params }: { params: Promise<{ id: strin
                 <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700 }}>
                   <span>Solo Travel Cost:</span>
                   <span style={{ color: "var(--red)" }}>
-                    ₹{pool.cost_per_person * (pool.total_seats + 1)}
+                    ₹{pool.cost_per_person * pool.total_seats}
                   </span>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700 }}>
                   <span>Your Net Savings:</span>
                   <span style={{ color: "var(--mint)" }}>
-                    ₹{Math.max(0, (pool.cost_per_person * (pool.total_seats + 1)) - pool.cost_per_person)}
+                    ₹{Math.max(0, (pool.cost_per_person * pool.total_seats) - pool.cost_per_person)}
                   </span>
                 </div>
               </div>
@@ -332,7 +333,7 @@ export default function PoolDetailPage({ params }: { params: Promise<{ id: strin
                 border: "1px dashed rgba(11, 143, 111, 0.3)",
                 lineHeight: 1.4
               }}>
-                🌟 By split-sharing this {pool.car_type || "ride"} instead of travelling solo, you save approximately <strong>{Math.round((1 - 1 / (pool.total_seats + 1)) * 100)}%</strong> of the fare!
+                By split-sharing this {pool.car_type || "ride"} instead of travelling solo, you save approximately <strong>{Math.round((1 - 1 / pool.total_seats) * 100)}%</strong> of the fare.
               </div>
             </div>
           </div>

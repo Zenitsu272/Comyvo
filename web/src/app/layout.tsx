@@ -5,15 +5,15 @@ import "@/styles/components.css";
 
 export const metadata: Metadata = {
   title: {
-    default: "Commuto — Campus Carpool",
-    template: "%s | Commuto",
+    default: "Comyvo — Campus Carpool",
+    template: "%s | Comyvo",
   },
   description:
     "Verified campus carpool for Amrita students. Find or create ride pools to Coimbatore railway station, airport, and beyond.",
-  keywords: ["carpool", "campus", "amrita", "coimbatore", "ride pool", "commuto"],
+  keywords: ["carpool", "campus", "amrita", "coimbatore", "ride pool", "comyvo"],
   manifest: "/manifest.json",
   openGraph: {
-    title: "Commuto — Campus Carpool",
+    title: "Comyvo — Campus Carpool",
     description: "Verified campus carpool for Amrita students.",
     type: "website",
   },

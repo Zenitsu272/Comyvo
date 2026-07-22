@@ -1,6 +1,6 @@
 "use client";
 
-import { Crown, Users } from "lucide-react";
+import { Crown } from "lucide-react";
 
 interface Member {
   user_id: string;
