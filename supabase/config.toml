@@ -28,10 +28,14 @@ max_frequency = "60s"
 otp_length = 6
 otp_expiry = 600
 
+[auth.email.template.confirmation]
+subject = "Your Comyvo verification code"
+content_path = "./supabase/templates/confirmation.html"
+
 [auth.rate_limit]
 email_sent = 6
 token_refresh = 150
-verify = 30
+token_verifications = 30
 
 [studio]
 enabled = true
