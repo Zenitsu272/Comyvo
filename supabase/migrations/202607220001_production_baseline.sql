@@ -330,6 +330,8 @@ create policy audit_logs_read_admin on public.audit_logs for select to authentic
 
 revoke all on public.users, public.pools, public.pool_members, public.reports, public.comments, public.premium_requests, public.audit_logs, public.api_rate_limits from anon, authenticated;
 grant select on public.users, public.pools, public.pool_members, public.reports, public.comments, public.premium_requests, public.audit_logs to authenticated;
+grant select, insert, update, delete on public.users, public.pools, public.pool_members, public.reports, public.comments, public.premium_requests, public.audit_logs, public.api_rate_limits to service_role;
+grant usage, select on all sequences in schema public to service_role;
 revoke all on function public.join_pool(uuid, integer), public.leave_pool(uuid), public.check_rate_limit(text, integer, integer) from public, anon, authenticated;
 grant execute on function public.join_pool(uuid, integer), public.leave_pool(uuid) to authenticated;
 grant execute on function public.check_rate_limit(text, integer, integer) to service_role;
