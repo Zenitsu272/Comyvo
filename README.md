@@ -23,7 +23,7 @@ npm ci --prefix web
 npm run dev
 ```
 
-Use the local Supabase output to replace the URL and keys in `web/.env.local`. Open `http://127.0.0.1:3000`. Local OTP messages can be inspected in Supabase Inbucket (normally `http://127.0.0.1:54324`).
+Use the local Supabase output to replace the URL and keys in `web/.env.local`. Open `http://127.0.0.1:3000`. Local OTP messages can be inspected in the test inbox at `http://127.0.0.1:55424`.
 
 Run every quality gate with:
 
