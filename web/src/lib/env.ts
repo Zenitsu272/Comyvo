@@ -27,14 +27,25 @@ function validUrl(name: string, value: string): string {
 }
 
 export function getServerEnvironment(): ServerEnvironment {
-  const publicKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+  const isDev = process.env.NODE_ENV !== "production";
+  const rawPublicKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
     ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  const serviceKey = process.env.SUPABASE_SECRET_KEY
+  const publicKey = rawPublicKey?.trim();
+
+  const rawServiceKey = process.env.SUPABASE_SECRET_KEY
     ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const serviceKey = rawServiceKey?.trim();
+
   const siteUrl = validUrl(
     "NEXT_PUBLIC_SITE_URL",
-    required("NEXT_PUBLIC_SITE_URL", process.env.NEXT_PUBLIC_SITE_URL),
+    process.env.NEXT_PUBLIC_SITE_URL || (isDev ? "http://localhost:3000" : required("NEXT_PUBLIC_SITE_URL", process.env.NEXT_PUBLIC_SITE_URL)),
   );
+
+  const rateLimitSecret = process.env.RATE_LIMIT_SECRET?.trim()
+    || (isDev ? "development-rate-limit-secret-32-chars-minimum" : required("RATE_LIMIT_SECRET", process.env.RATE_LIMIT_SECRET));
+
+  const resolvedServiceKey = serviceKey
+    || (isDev ? "dev_dummy_service_role_key" : required("SUPABASE_SECRET_KEY (or SUPABASE_SERVICE_ROLE_KEY)", serviceKey));
 
   return {
     siteUrl,
@@ -46,11 +57,8 @@ export function getServerEnvironment(): ServerEnvironment {
       "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY (or NEXT_PUBLIC_SUPABASE_ANON_KEY)",
       publicKey,
     ),
-    supabaseServiceRoleKey: required(
-      "SUPABASE_SECRET_KEY (or SUPABASE_SERVICE_ROLE_KEY)",
-      serviceKey,
-    ),
-    rateLimitSecret: required("RATE_LIMIT_SECRET", process.env.RATE_LIMIT_SECRET),
+    supabaseServiceRoleKey: resolvedServiceKey,
+    rateLimitSecret,
     resendApiKey: process.env.RESEND_API_KEY,
     emailFrom: process.env.EMAIL_FROM,
     twilioAccountSid: process.env.TWILIO_ACCOUNT_SID,

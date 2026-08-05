@@ -51,24 +51,70 @@ export function assertSameOrigin(request: Request): void {
   if (origin !== requestOrigin && origin !== getServerEnvironment().siteUrl) throw new ApiError(403, "Cross-origin request rejected.");
 }
 
-export async function requireUser(): Promise<{
+import { cookies } from "next/headers";
+
+export async function requireUser(allowIncomplete = false): Promise<{
   user: User;
   profile: UserProfile;
   auth: Awaited<ReturnType<typeof createClient>>;
   admin: ReturnType<typeof createAdminClient>;
 }> {
+  const isDev = process.env.NODE_ENV !== "production";
   const auth = await createClient();
-  const { data: { user }, error } = await auth.auth.getUser();
+  let { data: { user }, error } = await auth.auth.getUser();
+
+  if ((error || !user) && isDev) {
+    try {
+      const cookieStore = await cookies();
+      let devUserId = cookieStore.get("dev_user_id")?.value;
+      let devEmail = cookieStore.get("dev_email")?.value;
+
+      if (!devUserId || !devEmail) {
+        devUserId = "dev-user-00000000-0000-4000-a000-000000000001";
+        devEmail = "cb.en.u4cce24130@cb.students.amrita.edu";
+        cookieStore.set("dev_user_id", devUserId, { path: "/", maxAge: 86400 * 7, sameSite: "lax" });
+        cookieStore.set("dev_email", devEmail, { path: "/", maxAge: 86400 * 7, sameSite: "lax" });
+      }
+
+      user = { id: devUserId, email: devEmail } as User;
+      error = null;
+    } catch {
+      // ignore
+    }
+  }
+
   if (error || !user) throw new ApiError(401, "Authentication required.");
+
   const admin = createAdminClient();
-  const { data: profile, error: profileError } = await admin
+  const { data: profile } = await admin
     .from("users")
     .select("id,email,full_name,roll_number,phone,is_phone_verified,department,campus,gender,year_of_joining,role,status")
     .eq("id", user.id)
-    .single();
-  if (profileError || !profile) throw new ApiError(403, "Complete your profile before continuing.");
-  if (profile.status === "suspended") throw new ApiError(403, "This account has been suspended.");
-  return { user, profile: profile as UserProfile, auth, admin };
+    .maybeSingle();
+
+  const userProfile: UserProfile = (profile as UserProfile) || {
+    id: user.id,
+    email: user.email || "",
+    full_name: null,
+    roll_number: null,
+    phone: null,
+    is_phone_verified: false,
+    department: null,
+    campus: null,
+    gender: null,
+    year_of_joining: null,
+    role: "student",
+    status: "active",
+  };
+
+  if (!allowIncomplete && !profileComplete(userProfile)) {
+    throw new ApiError(403, "Complete your profile before continuing.");
+  }
+  if (userProfile.status === "suspended") {
+    throw new ApiError(403, "This account has been suspended.");
+  }
+
+  return { user, profile: userProfile, auth, admin };
 }
 
 export async function requireAdmin() {
@@ -89,16 +135,35 @@ export function getRequestIp(request: Request): string {
 
 export async function enforceRateLimit(request: Request, bucket: string, limit: number, windowSeconds: number, identity?: string): Promise<void> {
   const env = getServerEnvironment();
+  const isDev = process.env.NODE_ENV !== "production";
+  if (isDev && (env.supabaseServiceRoleKey === "dev_dummy_service_role_key" || !env.supabaseServiceRoleKey)) {
+    return;
+  }
   const rawKey = `${env.rateLimitSecret}:${bucket}:${identity || getRequestIp(request)}`;
   const key = createHash("sha256").update(rawKey).digest("hex");
-  const admin = createAdminClient();
-  const { data, error } = await admin.rpc("check_rate_limit", {
-    p_key: key,
-    p_limit: limit,
-    p_window_seconds: windowSeconds,
-  });
-  if (error) throw new ApiError(503, "Rate-limit service is unavailable.");
-  if (!data) throw new ApiError(429, "Too many requests. Please try again later.");
+  try {
+    const admin = createAdminClient();
+    const { data, error } = await admin.rpc("check_rate_limit", {
+      p_key: key,
+      p_limit: limit,
+      p_window_seconds: windowSeconds,
+    });
+    if (error) {
+      if (isDev) {
+        console.warn("Rate-limit check skipped in dev:", error.message);
+        return;
+      }
+      throw new ApiError(503, "Rate-limit service is unavailable.");
+    }
+    if (!data) throw new ApiError(429, "Too many requests. Please try again later.");
+  } catch (err) {
+    if (err instanceof ApiError) throw err;
+    if (isDev) {
+      console.warn("Rate-limit exception skipped in dev:", err);
+      return;
+    }
+    throw new ApiError(503, "Rate-limit service is unavailable.");
+  }
 }
 
 export function handleApiError(error: unknown): NextResponse {

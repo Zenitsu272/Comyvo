@@ -5,7 +5,7 @@ import { decodeAmritaEmail } from "@/lib/auth";
 
 export async function GET() {
   try {
-    const { profile } = await requireUser();
+    const { profile } = await requireUser(true);
     return NextResponse.json({ ...profile, profile_complete: profileComplete(profile) });
   } catch (error) {
     return handleApiError(error);
@@ -15,7 +15,7 @@ export async function GET() {
 export async function PUT(request: Request) {
   try {
     assertSameOrigin(request);
-    const { user, profile, admin } = await requireUser();
+    const { user, profile, admin } = await requireUser(true);
     await enforceRateLimit(request, "profile-update", 20, 60 * 60, user.id);
     const input = await parseJson(request, profileSchema);
     const decoded = decodeAmritaEmail(user.email || profile.email);

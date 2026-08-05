@@ -26,7 +26,10 @@ export async function createClient() {
 
 export function createAdminClient() {
   const env = getServerEnvironment();
-  return createSupabaseClient(env.supabaseUrl, env.supabaseServiceRoleKey, {
+  const key = env.supabaseServiceRoleKey.startsWith("dev_dummy") || !env.supabaseServiceRoleKey
+    ? env.supabasePublicKey
+    : env.supabaseServiceRoleKey;
+  return createSupabaseClient(env.supabaseUrl, key, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 }
