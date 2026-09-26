@@ -17,6 +17,7 @@ function LoginForm() {
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
   const [emailError, setEmailError] = useState<string | null>(null);
+  const [localInbox, setLocalInbox] = useState(false);
 
   // Still decode silently for pre-filling signup — just don't show the card
   const decoded = useMemo(() => decodeAmritaEmail(email), [email]);
@@ -28,17 +29,23 @@ function LoginForm() {
     setEmailError(null);
     setLoading(true);
 
-    const res = await fetch("/api/auth/send-otp", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email }),
-    });
-    const data = await res.json();
-    setLoading(false);
+    try {
+      const res = await fetch("/api/auth/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
 
-    if (!res.ok) { setEmailError(data.error); return; }
-    setStep("otp");
-    toast("OTP sent! Check your college email inbox.", "success");
+      if (!res.ok) { setEmailError(data.error); return; }
+      setLocalInbox(data.delivery === "local_inbox");
+      setStep("otp");
+      toast(data.delivery === "local_inbox" ? "Code delivered to the local test inbox, not your college email." : "Code sent. Check your email inbox and spam folder.", "success");
+    } catch {
+      setEmailError("Could not connect to Comyvo. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleVerifyOtp = async (e: React.FormEvent) => {
@@ -128,11 +135,12 @@ function LoginForm() {
         ) : (
           <>
             <p className="kicker">One more step</p>
-            <h2>Check your email</h2>
+            <h2>{localInbox ? "Check the local test inbox" : "Check your email"}</h2>
             <p className="helper">
-              We sent a 6-digit code to{" "}
+              {localInbox ? "This development setup captured a code for " : "We sent a 6-digit code to "}
               <strong style={{ color: "var(--ink)", fontFamily: "monospace", fontSize: "0.9rem" }}>{email}</strong>
             </p>
+            {localInbox && <p className="helper">No email was sent to your college inbox. Open the local Mailpit inbox to retrieve your test code.</p>}
             <hr className="divider" />
 
             <form onSubmit={handleVerifyOtp} style={{ display: "grid", gap: 14 }}>

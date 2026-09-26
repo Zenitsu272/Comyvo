@@ -19,6 +19,7 @@ const siteUrl = env.NEXT_PUBLIC_SITE_URL || "http://127.0.0.1:3000";
 const supabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL;
 const serviceKey = env.SUPABASE_SECRET_KEY || env.SUPABASE_SERVICE_ROLE_KEY;
 const mailpitUrl = env.LOCAL_MAILPIT_URL || "http://127.0.0.1:55424";
+if (env.OTP_DELIVERY !== "supabase") throw new Error("Set OTP_DELIVERY=supabase in .env.local and restart the dev server before running local E2E. This prevents test emails from being sent externally.");
 
 if (!/^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/i.test(siteUrl)) throw new Error("e2e:local only runs against localhost.");
 if (!supabaseUrl || !serviceKey) throw new Error("Supabase URL and server key are required in .env.local.");
