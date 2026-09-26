@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { toast } from "@/components/ui/Toast";
 import { Skeleton } from "@/components/ui/Skeleton";
 import Modal from "@/components/ui/Modal";
-import { ShieldCheck, AlertTriangle, Crown, LogOut } from "lucide-react";
+import { ShieldCheck, AlertTriangle, Crown, LogOut, Trash2 } from "lucide-react";
 
 const DEPARTMENTS = [
   "CCE", "CSE", "ECE", "EEE", "MECH", "CIVIL", "IT",
@@ -35,6 +35,9 @@ export default function SettingsPage() {
   const [showPhoneVerifyModal, setShowPhoneVerifyModal] = useState(false);
   const [phoneOtp, setPhoneOtp] = useState("");
   const [verifyingPhone, setVerifyingPhone] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState("");
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -90,7 +93,12 @@ export default function SettingsPage() {
     setVerifyingPhone(false);
     if (!response.ok) return toast(data.error || "Verification code could not be sent.", "error");
     setShowPhoneVerifyModal(true);
-    toast("Verification code sent by SMS.", "success");
+    if (data.development_code) {
+      setPhoneOtp(data.development_code);
+      toast(`Local verification code: ${data.development_code}`, "info");
+    } else {
+      toast("Verification code sent by SMS.", "success");
+    }
   };
 
   const handleVerifyPhone = async () => {
@@ -117,6 +125,22 @@ export default function SettingsPage() {
 
   const handleRequestPremium = async () => {
     router.push("/premium");
+  };
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmation !== "DELETE") return;
+    setDeleting(true);
+    const response = await fetch("/api/me", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ confirmation: deleteConfirmation }),
+    });
+    const data = await response.json();
+    setDeleting(false);
+    if (!response.ok) return toast(data.error || "Account deletion failed.", "error");
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.replace("/");
   };
 
   if (loading) {
@@ -265,6 +289,17 @@ export default function SettingsPage() {
                 </p>
               )}
             </div>
+
+            <div style={{ padding: 24, border: "1.5px solid rgba(190, 40, 40, 0.25)", borderRadius: 18, background: "#fff" }}>
+              <p className="kicker" style={{ color: "var(--red)" }}>Danger zone</p>
+              <h3 style={{ fontSize: "1.1rem", margin: "6px 0 10px" }}>Delete account</h3>
+              <p className="helper" style={{ fontSize: "0.82rem", marginBottom: 14 }}>
+                Permanently removes your profile, memberships, comments, and hosted pools.
+              </p>
+              <button type="button" className="btn-danger btn btn-sm btn-wide" onClick={() => setShowDeleteModal(true)}>
+                <Trash2 size={14} /> Delete my account
+              </button>
+            </div>
           </aside>
         </div>
       </div>
@@ -286,6 +321,29 @@ export default function SettingsPage() {
               onChange={(e) => setPhoneOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
               maxLength={6}
               style={{ fontSize: "1.6rem", letterSpacing: "0.2em", textAlign: "center", fontWeight: 800 }}
+            />
+          </div>
+        </Modal>
+      )}
+
+      {showDeleteModal && (
+        <Modal
+          title="Permanently delete your account?"
+          message="This cannot be undone. Type DELETE to confirm. Any pools you host will be cancelled."
+          confirmLabel="Delete Account"
+          variant="danger"
+          onConfirm={handleDeleteAccount}
+          onCancel={() => { setShowDeleteModal(false); setDeleteConfirmation(""); }}
+          loading={deleting}
+          confirmDisabled={deleteConfirmation !== "DELETE"}
+        >
+          <div style={{ margin: "14px 0" }}>
+            <input
+              aria-label="Type DELETE to confirm"
+              value={deleteConfirmation}
+              onChange={(event) => setDeleteConfirmation(event.target.value.toUpperCase())}
+              placeholder="DELETE"
+              autoComplete="off"
             />
           </div>
         </Modal>

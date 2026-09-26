@@ -11,6 +11,7 @@ type ServerEnvironment = {
   twilioAccountSid?: string;
   twilioAuthToken?: string;
   twilioVerifyServiceSid?: string;
+  localPhoneOtp?: string;
 };
 
 function required(name: string, value: string | undefined): string {
@@ -56,6 +57,7 @@ export function getServerEnvironment(): ServerEnvironment {
     twilioAccountSid: process.env.TWILIO_ACCOUNT_SID,
     twilioAuthToken: process.env.TWILIO_AUTH_TOKEN,
     twilioVerifyServiceSid: process.env.TWILIO_VERIFY_SERVICE_SID,
+    localPhoneOtp: process.env.LOCAL_PHONE_OTP,
   };
 }
 
@@ -71,4 +73,5 @@ export function assertProductionEnvironment(): void {
   if (!env.twilioAccountSid || !env.twilioAuthToken || !env.twilioVerifyServiceSid) {
     throw new Error("TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and TWILIO_VERIFY_SERVICE_SID are required in production.");
   }
+  if (env.localPhoneOtp) throw new Error("LOCAL_PHONE_OTP must never be configured in production.");
 }

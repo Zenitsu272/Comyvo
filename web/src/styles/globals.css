@@ -410,6 +410,10 @@ textarea {
 
 .modal-actions { display: flex; justify-content: flex-end; gap: 10px; }
 
+.legal-content { display: grid; gap: 10px; line-height: 1.75; }
+.legal-content h2 { margin-top: 22px; font-size: 1.15rem; }
+.legal-content p { color: var(--muted); margin: 0; }
+
 /* ── Live dot ────────────────────────────────────────────── */
 .live-dot {
   display: inline-block;

@@ -10,8 +10,8 @@ export async function POST(request: Request) {
     const { phone } = await parseJson(request, phoneRequestSchema);
     if (profile.phone !== phone) return NextResponse.json({ error: "Save this phone number to your profile first." }, { status: 409 });
     await enforceRateLimit(request, "phone-send", 3, 60 * 60, user.id);
-    await sendPhoneCode(phone);
-    return NextResponse.json({ success: true });
+    const result = await sendPhoneCode(phone);
+    return NextResponse.json({ success: true, development_code: result.developmentCode });
   } catch (error) {
     return handleApiError(error);
   }

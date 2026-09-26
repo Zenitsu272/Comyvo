@@ -195,3 +195,13 @@ export function getDomainError(email: string): string | null {
     return "Only Amrita college email addresses are allowed (e.g. cb.en.u4cce24130@cb.students.amrita.edu).";
   return null;
 }
+
+export function getSafeNextPath(value: string | null | undefined, fallback = "/discover"): string {
+  if (!value || !value.startsWith("/") || value.startsWith("//") || value.includes("\\")) return fallback;
+  try {
+    const parsed = new URL(value, "https://comyvo.local");
+    return parsed.origin === "https://comyvo.local" ? `${parsed.pathname}${parsed.search}${parsed.hash}` : fallback;
+  } catch {
+    return fallback;
+  }
+}

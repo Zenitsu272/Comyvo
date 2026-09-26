@@ -16,6 +16,14 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
+  const { data: profile } = await supabase
+    .from("users")
+    .select("full_name,roll_number,department,campus")
+    .eq("id", user.id)
+    .maybeSingle();
+  if (!profile?.full_name || !profile.roll_number || !profile.department || !profile.campus) {
+    redirect("/signup");
+  }
   return (
     <>
       <AppShell>{children}</AppShell>

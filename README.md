@@ -4,12 +4,14 @@ Comyvo is a production-oriented campus carpool application for verified Amrita a
 
 ## What is implemented
 
-- Passwordless six-digit email OTP through Supabase Auth; there is no development-code bypass.
+- Passwordless six-digit email OTP through Supabase Auth; local codes are delivered to Mailpit and production codes use configured SMTP.
 - Server-authorized profile, pool, membership, comment, report, premium, and admin APIs.
 - Atomic seat reservation and release in Postgres to prevent overbooking races.
 - Row-level security, least-privilege grants, admin audit logs, account suspension, and women-only pool enforcement.
 - Durable hashed rate limits, same-origin mutation checks, strict validation, security headers, health check, CI, and zero known production dependency vulnerabilities.
 - Resend ride notifications and Twilio Verify phone ownership checks.
+- Local-only fixed phone OTP support for development, guarded so it cannot be enabled in production.
+- Privacy/terms pages, self-service account deletion, pool lifecycle reconciliation, and administrator user/role controls.
 
 ## Local setup
 
@@ -30,6 +32,7 @@ Run every quality gate with:
 ```powershell
 npm run check
 npm run audit:prod --prefix web
+npm run e2e:local --prefix web
 ```
 
 ## Production deployment
@@ -52,6 +55,8 @@ npm run audit:prod --prefix web
    ```
 
 6. Confirm `https://YOUR_DOMAIN/api/health` returns `{"status":"ok"}`, then test email OTP, phone OTP, pool creation, concurrent seat joins, cancellation email, reporting, and admin review using real accounts.
+
+The local end-to-end command requires the local Supabase stack and Next.js development server to be running. It refuses to target non-local URLs, delivers OTP mail through Mailpit, and removes its temporary accounts after completion.
 
 Enable Supabase point-in-time recovery or daily backups, Vercel production logs/alerts, Resend webhook monitoring, Twilio spend limits, and DNS SPF/DKIM/DMARC before inviting users. Rotate every secret if it has ever appeared in source control or chat.
 

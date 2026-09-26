@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { decodeAmritaEmail, getDomainError, isAllowedEmail } from "@/lib/auth";
+import { decodeAmritaEmail, getDomainError, getSafeNextPath, isAllowedEmail } from "@/lib/auth";
 
 describe("Amrita identity validation", () => {
   it("accepts approved student domains", () => {
@@ -14,5 +14,17 @@ describe("Amrita identity validation", () => {
     expect(identity.campus).toBe("Coimbatore");
     expect(identity.departmentCode).toBe("CCE");
     expect(identity.yearOfJoining).toBe(2024);
+  });
+});
+
+describe("safe post-auth redirects", () => {
+  it("keeps local paths and their query strings", () => {
+    expect(getSafeNextPath("/pool/123?seat=2")).toBe("/pool/123?seat=2");
+  });
+
+  it("rejects protocol-relative, absolute, and backslash paths", () => {
+    expect(getSafeNextPath("//evil.example")).toBe("/discover");
+    expect(getSafeNextPath("https://evil.example")).toBe("/discover");
+    expect(getSafeNextPath("/\\evil.example")).toBe("/discover");
   });
 });

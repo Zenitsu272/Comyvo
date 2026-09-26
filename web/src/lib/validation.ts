@@ -60,16 +60,14 @@ export const updatePoolSchema = z.object({
   from_location: cleanText(2, 120).optional(),
   to_location: cleanText(2, 120).optional(),
   via_route: optionalText(240),
-  car_type: z.enum(["auto", "sedan", "suv"]).optional(),
   departure_at: z.string().datetime({ offset: true }).optional(),
-  total_seats: z.coerce.number().int().min(2).max(8).optional(),
   cost_per_person: z.coerce.number().min(0).max(10000).optional(),
   notes: optionalText(1000),
   campus: z.enum(CAMPUSES).optional(),
   luggage_capacity: z.enum(["any", "backpacks", "trolleys"]).optional(),
   women_only: z.boolean().optional(),
   contact_visibility: z.enum(["always", "premium_only", "after_join"]).optional(),
-  status: z.enum(["active", "cancelled", "completed"]).optional(),
+  status: z.enum(["cancelled", "completed"]).optional(),
 }).strict().refine((value) => Object.keys(value).length > 0, "Provide at least one field to update.");
 
 export const joinPoolSchema = z.object({ seat_no: z.coerce.number().int().min(2).max(8) }).strict();
@@ -95,3 +93,4 @@ export const phoneVerifySchema = phoneRequestSchema.extend({
 });
 
 export const premiumRequestSchema = z.object({ note: optionalText(500) }).strict();
+export const deleteAccountSchema = z.object({ confirmation: z.literal("DELETE") }).strict();

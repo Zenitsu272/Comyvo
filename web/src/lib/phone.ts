@@ -9,6 +9,16 @@ function twilioConfiguration() {
   return env;
 }
 
+function localDevelopmentCode(): string | undefined {
+  const env = getServerEnvironment();
+  if (process.env.NODE_ENV === "production" || !env.localPhoneOtp) return undefined;
+  const siteHost = new URL(env.siteUrl).hostname;
+  const supabaseHost = new URL(env.supabaseUrl).hostname;
+  const localHosts = new Set(["127.0.0.1", "localhost", "::1"]);
+  if (!localHosts.has(siteHost) || !localHosts.has(supabaseHost) || !/^\d{4,10}$/.test(env.localPhoneOtp)) return undefined;
+  return env.localPhoneOtp;
+}
+
 async function twilioRequest(path: string, values: URLSearchParams): Promise<Record<string, unknown>> {
   const env = twilioConfiguration();
   const response = await fetch(`https://verify.twilio.com/v2/Services/${env.twilioVerifyServiceSid}/${path}`, {
@@ -28,11 +38,16 @@ export function indianPhone(phone: string): string {
   return `+91${phone}`;
 }
 
-export async function sendPhoneCode(phone: string): Promise<void> {
+export async function sendPhoneCode(phone: string): Promise<{ developmentCode?: string }> {
+  const developmentCode = localDevelopmentCode();
+  if (developmentCode) return { developmentCode };
   await twilioRequest("Verifications", new URLSearchParams({ To: indianPhone(phone), Channel: "sms" }));
+  return {};
 }
 
 export async function verifyPhoneCode(phone: string, code: string): Promise<boolean> {
+  const developmentCode = localDevelopmentCode();
+  if (developmentCode) return code === developmentCode;
   const data = await twilioRequest("VerificationCheck", new URLSearchParams({ To: indianPhone(phone), Code: code }));
   return data.status === "approved";
 }

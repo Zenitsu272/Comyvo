@@ -1,6 +1,7 @@
 {
   "name": "web",
   "version": "0.1.0",
+  "type": "module",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -11,18 +12,19 @@
     "test": "vitest run",
     "check": "npm run lint && npm run typecheck && npm run test && npm run build",
     "audit:prod": "npm audit --omit=dev --audit-level=high",
-    "bootstrap:admin": "node scripts/bootstrap-admin.mjs"
+    "bootstrap:admin": "node scripts/bootstrap-admin.mjs",
+    "e2e:local": "node scripts/e2e-local.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",
     "@supabase/supabase-js": "^2.110.1",
     "lucide-react": "^1.23.0",
-    "next": "16.2.10",
-    "postcss": "^8.5.10",
+    "next": "16.3.6",
+    "postcss": "8.5.28",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "server-only": "^0.0.1",
-    "sharp": "^0.35.0",
+    "sharp": "0.35.4",
     "zod": "^4.4.3"
   },
   "devDependencies": {
@@ -30,7 +32,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.2.10",
+    "eslint-config-next": "16.3.6",
     "typescript": "^5",
     "vitest": "^4.1.10"
   },

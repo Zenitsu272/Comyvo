@@ -38,6 +38,8 @@ function poolResponse(pool: PoolRecord, viewer: { id: string; role: string }, me
 export async function GET(request: Request) {
   try {
     const { user, profile, admin } = await requireUser();
+    const { error: lifecycleError } = await admin.rpc("reconcile_expired_pools");
+    if (lifecycleError) throw lifecycleError;
     const { searchParams } = new URL(request.url);
     const scope = searchParams.get("scope");
     const membershipQuery = admin.from("pool_members").select("pool_id").eq("user_id", user.id);

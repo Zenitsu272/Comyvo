@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { toast } from "@/components/ui/Toast";
 import ToastContainer from "@/components/ui/Toast";
+import { getSafeNextPath } from "@/lib/auth";
 
 const DEPARTMENTS = [
   "CCE", "CSE", "ECE", "EEE", "MECH", "CIVIL", "IT",
@@ -15,6 +16,7 @@ const CAMPUSES = ["Coimbatore", "Chennai", "Bengaluru", "Kochi", "Mysuru", "Amri
 function SignupForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const next = getSafeNextPath(searchParams.get("next"));
   const [loading, setLoading] = useState(false);
 
   // Pre-fill from decoded email params
@@ -56,7 +58,7 @@ function SignupForm() {
 
     if (!res.ok) { toast(data.error, "error"); return; }
     toast("Welcome to Comyvo!", "success");
-    setTimeout(() => router.push("/discover"), 700);
+    setTimeout(() => router.push(next), 700);
   };
 
   const prefilled = !!(prefillRoll || prefillDept || prefillCampus);

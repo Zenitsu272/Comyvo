@@ -9,6 +9,7 @@ interface ModalProps {
   onConfirm: () => void;
   onCancel: () => void;
   loading?: boolean;
+  confirmDisabled?: boolean;
   children?: React.ReactNode;
 }
 
@@ -21,6 +22,7 @@ export default function Modal({
   onConfirm,
   onCancel,
   loading = false,
+  confirmDisabled = false,
   children,
 }: ModalProps) {
   return (
@@ -36,7 +38,7 @@ export default function Modal({
           <button
             className={variant === "danger" ? "btn-danger btn" : "btn-solid btn"}
             onClick={onConfirm}
-            disabled={loading}
+            disabled={loading || confirmDisabled}
           >
             {loading ? "Loading…" : confirmLabel}
           </button>

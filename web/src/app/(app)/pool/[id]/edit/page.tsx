@@ -82,10 +82,17 @@ export default function EditPoolPage({ params }: { params: Promise<{ id: string 
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        ...form,
+        from_location: form.from_location,
+        to_location: form.to_location,
+        via_route: form.via_route,
         departure_at: new Date(form.departure_at).toISOString(),
-        total_seats: Number(form.total_seats),
         cost_per_person: Number(form.cost_per_person),
+        notes: form.notes,
+        campus: form.campus,
+        luggage_capacity: form.luggage_capacity,
+        women_only: form.women_only,
+        contact_visibility: form.contact_visibility,
+        ...(form.status === "cancelled" || form.status === "completed" ? { status: form.status } : {}),
       }),
     });
     const data = await res.json();

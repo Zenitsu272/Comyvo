@@ -3,14 +3,14 @@
 import { useState, Suspense, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { getDomainError, decodeAmritaEmail } from "@/lib/auth";
+import { getDomainError, decodeAmritaEmail, getSafeNextPath } from "@/lib/auth";
 import { toast } from "@/components/ui/Toast";
 import ToastContainer from "@/components/ui/Toast";
 
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") ?? "/discover";
+  const next = getSafeNextPath(searchParams.get("next"));
 
   const [step, setStep] = useState<"email" | "otp">("email");
   const [email, setEmail] = useState("");
@@ -62,6 +62,7 @@ function LoginForm() {
       if (decoded.campus)         params.set("campus", decoded.campus);
       if (decoded.departmentCode) params.set("dept", decoded.departmentCode);
       if (decoded.yearOfJoining)  params.set("year", String(decoded.yearOfJoining));
+      params.set("next", next);
       router.push(`/signup?${params.toString()}`);
     } else {
       router.push(next);
@@ -171,7 +172,7 @@ function LoginForm() {
       </div>
 
       <p style={{ marginTop: 18, color: "var(--muted)", fontSize: "0.8rem", textAlign: "center", maxWidth: 380 }}>
-        By signing in you agree to use Comyvo responsibly within campus policy.
+        By signing in, you agree to the <Link href="/terms">Terms</Link> and acknowledge the <Link href="/privacy">Privacy Notice</Link>.
       </p>
       <ToastContainer />
     </div>

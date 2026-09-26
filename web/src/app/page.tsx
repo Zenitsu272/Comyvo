@@ -195,7 +195,11 @@ export default function LandingPage() {
         gap: 16
       }}>
         <span>© 2026 Comyvo. Created for Amrita Vishwa Vidyapeetham.</span>
-        <span>Coimbatore Campus</span>
+        <span style={{ display: "flex", gap: 16 }}>
+          <Link href="/privacy">Privacy</Link>
+          <Link href="/terms">Terms</Link>
+          <span>Coimbatore Campus</span>
+        </span>
       </footer>
     </div>
   );
