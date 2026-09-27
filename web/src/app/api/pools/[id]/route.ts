@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { ApiError, assertSameOrigin, enforceRateLimit, handleApiError, parseJson, requireUser } from "@/lib/api";
-import { updatePoolSchema } from "@/lib/validation";
+import { poolPricingSchema, updatePoolSchema } from "@/lib/validation";
 import { escapeHtml, sendEmail } from "@/lib/email";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -10,6 +10,8 @@ export async function GET(_: Request, { params }: Params) {
   try {
     const { id } = await params;
     const { user, profile, admin } = await requireUser();
+    const { error: lifecycleError } = await admin.rpc("reconcile_expired_pools");
+    if (lifecycleError) throw lifecycleError;
     const { data: pool, error } = await admin.from("pools")
       .select("*, host:users!pools_host_id_fkey(id,full_name,roll_number,phone,is_phone_verified,email)")
       .eq("id", id).single();
@@ -59,31 +61,26 @@ export async function PUT(request: Request, { params }: Params) {
     const { user, admin } = await requireUser();
     await enforceRateLimit(request, "pool-update", 30, 60 * 60, user.id);
     const updates = await parseJson(request, updatePoolSchema);
-    const { data: current } = await admin.from("pools").select("*,pool_members(seat_no)").eq("id", id).single();
+    const { error: lifecycleError } = await admin.rpc("reconcile_expired_pools");
+    if (lifecycleError) throw lifecycleError;
+    const { data: current } = await admin.from("pools").select("*").eq("id", id).single();
     if (!current) throw new ApiError(404, "Pool not found.");
     if (current.host_id !== user.id) throw new ApiError(403, "Only the host can update this pool.");
     if (current.status === "cancelled" || current.status === "completed") throw new ApiError(409, "Closed pools cannot be edited.");
     if (updates.departure_at && Date.parse(updates.departure_at) < Date.now() + 15 * 60_000) {
       throw new ApiError(400, "Departure must be at least 15 minutes from now.");
     }
-    const nextTotal = Number(updates.total_seats ?? current.total_seats);
-    const nextVehicle = String(updates.car_type ?? current.car_type) as "auto" | "sedan" | "suv";
-    const expectedCapacity = { auto: 3, sedan: 4, suv: 6 }[nextVehicle];
-    if (nextTotal !== expectedCapacity) throw new ApiError(400, `Seat capacity for ${nextVehicle} must be ${expectedCapacity}.`);
-    const memberSeats = (current.pool_members || []).map((member: { seat_no: number }) => member.seat_no);
-    if (memberSeats.some((seat: number) => seat > nextTotal)) throw new ApiError(409, "The new capacity excludes an already-booked seat.");
-    const memberCount = memberSeats.length;
-    const status = updates.status === "cancelled" || updates.status === "completed"
-      ? updates.status
-      : memberCount >= nextTotal - 1 ? "full" : "active";
+    if (updates.status === "completed" && new Date(current.departure_at).getTime() > Date.now()) {
+      throw new ApiError(409, "A pool can only be completed after its departure time.");
+    }
+    const pricing = poolPricingSchema.safeParse({ ...current, ...updates });
+    if (!pricing.success) throw new ApiError(400, pricing.error.issues[0].message);
     const { data, error } = await admin.from("pools").update({
       ...updates,
-      status,
-      total_seats: nextTotal,
-      available_seats: Math.max(0, nextTotal - 1 - memberCount),
+      ...pricing.data,
     }).eq("id", id).eq("host_id", user.id).select().single();
     if (error) throw error;
-    if (status === "cancelled" && current.status !== "cancelled") await notifyCancellation(admin, id, data);
+    if (updates.status === "cancelled" && current.status !== "cancelled") await notifyCancellation(admin, id, data);
     return NextResponse.json(data);
   } catch (error) {
     return handleApiError(error);

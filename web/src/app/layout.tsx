@@ -4,6 +4,7 @@ import "@/styles/layout.css";
 import "@/styles/components.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://127.0.0.1:3000"),
   title: {
     default: "Comyvo — Campus Carpool",
     template: "%s | Comyvo",
@@ -17,6 +18,7 @@ export const metadata: Metadata = {
     description: "Verified campus carpool for Amrita students.",
     type: "website",
   },
+  alternates: { canonical: "/" },
 };
 
 export default function RootLayout({

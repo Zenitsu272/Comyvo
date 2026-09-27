@@ -5,6 +5,7 @@ import PoolCard, { Pool } from "@/components/pools/PoolCard";
 import { PoolCardSkeleton } from "@/components/ui/Skeleton";
 import { toast } from "@/components/ui/Toast";
 import { Search, SlidersHorizontal } from "lucide-react";
+import { averageFixedFare, comparePoolPrices } from "@/lib/pricing";
 
 export default function DiscoverPage() {
   const [pools, setPools] = useState<Pool[]>([]);
@@ -71,9 +72,7 @@ export default function DiscoverPage() {
     return diff > 0 && diff <= 5 * 3600000;
   }).length;
   const pulseAvgFare = useMemo(() => {
-    if (pulsePools.length === 0) return 0;
-    const sum = pulsePools.reduce((s, p) => s + Number(p.cost_per_person), 0);
-    return Math.round(sum / pulsePools.length);
+    return averageFixedFare(pulsePools);
   }, [pulsePools]);
   const [filters, setFilters] = useState({
     to: "",
@@ -111,7 +110,7 @@ export default function DiscoverPage() {
     if (filters.sort_by === "soonest") {
       data.sort((a, b) => new Date(a.departure_at).getTime() - new Date(b.departure_at).getTime());
     } else if (filters.sort_by === "cheapest") {
-      data.sort((a, b) => a.cost_per_person - b.cost_per_person);
+      data.sort(comparePoolPrices);
     } else if (filters.sort_by === "seats") {
       data.sort((a, b) => b.available_seats - a.available_seats);
     }
@@ -422,7 +421,7 @@ export default function DiscoverPage() {
               <div>
                 <span>Avg fare</span>
                 <strong style={{ transition: "all 0.3s ease" }}>
-                  {pulseAvgFare > 0 ? `₹${pulseAvgFare}` : "—"}
+                  {pulseAvgFare !== null ? `₹${pulseAvgFare}` : "—"}
                 </strong>
               </div>
             </div>

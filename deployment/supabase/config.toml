@@ -1,0 +1,12 @@
+project_id = "comyvo-production"
+
+[auth]
+site_url = "https://comyvo.vercel.app"
+additional_redirect_urls = ["https://comyvo.vercel.app/auth/callback"]
+enable_signup = true
+
+[auth.email]
+enable_signup = true
+enable_confirmations = true
+otp_length = 6
+otp_expiry = 600

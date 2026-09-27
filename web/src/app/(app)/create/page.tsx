@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@/components/ui/Toast";
+import CostFields from "@/components/pools/CostFields";
 
 const CAMPUSES = ["Coimbatore", "Chennai", "Bengaluru", "Kochi", "Mysuru", "Amritapuri"];
 
@@ -17,6 +18,7 @@ export default function CreatePage() {
     departure_at: "",
     total_seats: "4",
     cost_per_person: "150",
+    pricing_mode: "fixed",
     notes: "",
     campus: "Coimbatore",
     luggage_capacity: "any",
@@ -77,7 +79,7 @@ export default function CreatePage() {
         ...form,
         departure_at: new Date(form.departure_at).toISOString(),
         total_seats: Number(form.total_seats),
-        cost_per_person: Number(form.cost_per_person),
+        cost_per_person: form.pricing_mode === "split_equally" ? null : Number(form.cost_per_person),
       }),
     });
     const data = await res.json();
@@ -140,10 +142,7 @@ export default function CreatePage() {
                 <span>Vehicle Capacity (Host Included)</span>
                 <input id="total_seats" name="total_seats" type="number" value={form.total_seats} readOnly style={{ background: "var(--panel-soft)", color: "var(--muted)", cursor: "not-allowed" }} />
               </label>
-              <label>
-                <span>Cost per person (₹)</span>
-                <input id="cost_per_person" name="cost_per_person" type="number" min="0" value={form.cost_per_person} onChange={handleChange} />
-              </label>
+              <CostFields mode={form.pricing_mode} cost={form.cost_per_person} onChange={handleChange} />
               <label>
                 <span>Campus</span>
                 <select id="campus" name="campus" value={form.campus} onChange={handleChange}>
@@ -209,7 +208,7 @@ export default function CreatePage() {
                   {form.departure_at
                     ? new Date(form.departure_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })
                     : "Pick a date"
-                  } · {form.total_seats} seats · ₹{form.cost_per_person}
+                  } · {form.total_seats} seats · {form.pricing_mode === "split_equally" ? "Split equally" : `₹${form.cost_per_person}`}
                 </p>
                 <p style={{ fontSize: "0.78rem", color: "var(--muted)", margin: "4px 0 10px" }}>
                   Luggage: {form.luggage_capacity === "backpacks" ? "Backpacks only" : form.luggage_capacity === "trolleys" ? "Trolleys allowed" : "Any size allowed"}

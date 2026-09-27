@@ -11,6 +11,13 @@ type ServerEnvironment = {
   twilioAccountSid?: string;
   twilioAuthToken?: string;
   twilioVerifyServiceSid?: string;
+  localPhoneOtp?: string;
+  phoneVerificationEnabled: boolean;
+  otpDelivery: "resend" | "smtp" | "supabase";
+  smtpHost?: string;
+  smtpPort: number;
+  smtpUser?: string;
+  smtpPassword?: string;
 };
 
 function required(name: string, value: string | undefined): string {
@@ -27,25 +34,20 @@ function validUrl(name: string, value: string): string {
 }
 
 export function getServerEnvironment(): ServerEnvironment {
-  const isDev = process.env.NODE_ENV !== "production";
-  const rawPublicKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+  const otpDelivery = process.env.OTP_DELIVERY || "resend";
+  if (!["resend", "smtp", "supabase"].includes(otpDelivery)) {
+    throw new Error("OTP_DELIVERY must be resend, smtp, or supabase.");
+  }
+  const smtpPort = Number(process.env.SMTP_PORT || "465");
+  if (![465, 587].includes(smtpPort)) throw new Error("SMTP_PORT must be 465 or 587 for encrypted email delivery.");
+  const publicKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
     ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  const publicKey = rawPublicKey?.trim();
-
-  const rawServiceKey = process.env.SUPABASE_SECRET_KEY
+  const serviceKey = process.env.SUPABASE_SECRET_KEY
     ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const serviceKey = rawServiceKey?.trim();
-
   const siteUrl = validUrl(
     "NEXT_PUBLIC_SITE_URL",
-    process.env.NEXT_PUBLIC_SITE_URL || (isDev ? "http://localhost:3000" : required("NEXT_PUBLIC_SITE_URL", process.env.NEXT_PUBLIC_SITE_URL)),
+    required("NEXT_PUBLIC_SITE_URL", process.env.NEXT_PUBLIC_SITE_URL),
   );
-
-  const rateLimitSecret = process.env.RATE_LIMIT_SECRET?.trim()
-    || (isDev ? "development-rate-limit-secret-32-chars-minimum" : required("RATE_LIMIT_SECRET", process.env.RATE_LIMIT_SECRET));
-
-  const resolvedServiceKey = serviceKey
-    || (isDev ? "dev_dummy_service_role_key" : required("SUPABASE_SECRET_KEY (or SUPABASE_SERVICE_ROLE_KEY)", serviceKey));
 
   return {
     siteUrl,
@@ -57,13 +59,23 @@ export function getServerEnvironment(): ServerEnvironment {
       "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY (or NEXT_PUBLIC_SUPABASE_ANON_KEY)",
       publicKey,
     ),
-    supabaseServiceRoleKey: resolvedServiceKey,
-    rateLimitSecret,
+    supabaseServiceRoleKey: required(
+      "SUPABASE_SECRET_KEY (or SUPABASE_SERVICE_ROLE_KEY)",
+      serviceKey,
+    ),
+    rateLimitSecret: required("RATE_LIMIT_SECRET", process.env.RATE_LIMIT_SECRET),
     resendApiKey: process.env.RESEND_API_KEY,
     emailFrom: process.env.EMAIL_FROM,
     twilioAccountSid: process.env.TWILIO_ACCOUNT_SID,
     twilioAuthToken: process.env.TWILIO_AUTH_TOKEN,
     twilioVerifyServiceSid: process.env.TWILIO_VERIFY_SERVICE_SID,
+    localPhoneOtp: process.env.LOCAL_PHONE_OTP,
+    phoneVerificationEnabled: process.env.PHONE_VERIFICATION_ENABLED === "true",
+    otpDelivery: otpDelivery as ServerEnvironment["otpDelivery"],
+    smtpHost: process.env.SMTP_HOST,
+    smtpPort,
+    smtpUser: process.env.SMTP_USER,
+    smtpPassword: process.env.SMTP_PASSWORD,
   };
 }
 
@@ -73,10 +85,13 @@ export function assertProductionEnvironment(): void {
   if (env.rateLimitSecret.length < 32) {
     throw new Error("RATE_LIMIT_SECRET must be at least 32 characters in production.");
   }
-  if (!env.resendApiKey || !env.emailFrom) {
-    throw new Error("RESEND_API_KEY and EMAIL_FROM are required in production.");
+  if (!env.emailFrom || (env.otpDelivery === "smtp"
+    ? !env.smtpHost || !env.smtpUser || !env.smtpPassword
+    : !env.resendApiKey)) {
+    throw new Error("EMAIL_FROM and credentials for the selected email provider are required in production.");
   }
-  if (!env.twilioAccountSid || !env.twilioAuthToken || !env.twilioVerifyServiceSid) {
+  if (env.phoneVerificationEnabled && (!env.twilioAccountSid || !env.twilioAuthToken || !env.twilioVerifyServiceSid)) {
     throw new Error("TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and TWILIO_VERIFY_SERVICE_SID are required in production.");
   }
+  if (env.localPhoneOtp) throw new Error("LOCAL_PHONE_OTP must never be configured in production.");
 }

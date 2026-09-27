@@ -1,0 +1,10 @@
+.git/
+data/
+tmp/
+tools/
+supabase/.temp/
+supabase/.branches/
+deployment/supabase/.temp/
+**/.env*
+**/node_modules/
+**/.next/

@@ -3,20 +3,21 @@
 import { useState, Suspense, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { getDomainError, decodeAmritaEmail } from "@/lib/auth";
+import { getDomainError, decodeAmritaEmail, getSafeNextPath } from "@/lib/auth";
 import { toast } from "@/components/ui/Toast";
 import ToastContainer from "@/components/ui/Toast";
 
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") ?? "/discover";
+  const next = getSafeNextPath(searchParams.get("next"));
 
   const [step, setStep] = useState<"email" | "otp">("email");
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
   const [emailError, setEmailError] = useState<string | null>(null);
+  const [localInbox, setLocalInbox] = useState(false);
 
   // Still decode silently for pre-filling signup — just don't show the card
   const decoded = useMemo(() => decodeAmritaEmail(email), [email]);
@@ -28,17 +29,23 @@ function LoginForm() {
     setEmailError(null);
     setLoading(true);
 
-    const res = await fetch("/api/auth/send-otp", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email }),
-    });
-    const data = await res.json();
-    setLoading(false);
+    try {
+      const res = await fetch("/api/auth/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
 
-    if (!res.ok) { setEmailError(data.error); return; }
-    setStep("otp");
-    toast("OTP sent! Check your college email inbox.", "success");
+      if (!res.ok) { setEmailError(data.error); return; }
+      setLocalInbox(data.delivery === "local_inbox");
+      setStep("otp");
+      toast(data.delivery === "local_inbox" ? "Code delivered to the local test inbox, not your college email." : "Code sent. Check your email inbox and spam folder.", "success");
+    } catch {
+      setEmailError("Could not connect to Comyvo. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleVerifyOtp = async (e: React.FormEvent) => {
@@ -62,6 +69,7 @@ function LoginForm() {
       if (decoded.campus)         params.set("campus", decoded.campus);
       if (decoded.departmentCode) params.set("dept", decoded.departmentCode);
       if (decoded.yearOfJoining)  params.set("year", String(decoded.yearOfJoining));
+      params.set("next", next);
       router.push(`/signup?${params.toString()}`);
     } else {
       router.push(next);
@@ -97,7 +105,7 @@ function LoginForm() {
                   type="email"
                   value={email}
                   onChange={(e) => { setEmail(e.target.value); setEmailError(null); }}
-                  placeholder="cb.en.u4cce24130@cb.students.amrita.edu"
+                  placeholder="cb.en.u4cce24156@cb.students.amrita.edu"
                   required
                   autoFocus
                   autoComplete="email"
@@ -111,7 +119,7 @@ function LoginForm() {
 
               <p className="helper" style={{ fontSize: "0.78rem" }}>
                 <span style={{ color: "var(--teal)", fontWeight: 700 }}>Only Amrita emails accepted — </span>
-                e.g. cb.en.u4cce24130@cb.students.amrita.edu
+                e.g. cb.en.u4cce24156@cb.students.amrita.edu
               </p>
 
               <button
@@ -127,11 +135,12 @@ function LoginForm() {
         ) : (
           <>
             <p className="kicker">One more step</p>
-            <h2>Check your email</h2>
+            <h2>{localInbox ? "Check the local test inbox" : "Check your email"}</h2>
             <p className="helper">
-              We sent a 6-digit code to{" "}
+              {localInbox ? "This development setup captured a code for " : "We sent a 6-digit code to "}
               <strong style={{ color: "var(--ink)", fontFamily: "monospace", fontSize: "0.9rem" }}>{email}</strong>
             </p>
+            {localInbox && <p className="helper">No email was sent to your college inbox. Open the local Mailpit inbox to retrieve your test code.</p>}
             <hr className="divider" />
 
             <form onSubmit={handleVerifyOtp} style={{ display: "grid", gap: 14 }}>
@@ -171,7 +180,7 @@ function LoginForm() {
       </div>
 
       <p style={{ marginTop: 18, color: "var(--muted)", fontSize: "0.8rem", textAlign: "center", maxWidth: 380 }}>
-        By signing in you agree to use Comyvo responsibly within campus policy.
+        By signing in, you agree to the <Link href="/terms">Terms</Link> and acknowledge the <Link href="/privacy">Privacy Notice</Link>.
       </p>
       <ToastContainer />
     </div>

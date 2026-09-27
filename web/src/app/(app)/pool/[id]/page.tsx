@@ -8,6 +8,7 @@ import Modal from "@/components/ui/Modal";
 import DiscussionBoard from "@/components/pools/DiscussionBoard";
 import SeatingChart from "@/components/pools/SeatingChart";
 import { formatDeparture } from "@/lib/utils";
+import { formatPoolPrice } from "@/lib/pricing";
 
 interface Member {
   user_id: string;
@@ -211,7 +212,7 @@ export default function PoolDetailPage({ params }: { params: Promise<{ id: strin
               </div>
               <div>
                 <span>Cost</span>
-                <strong>₹{pool.cost_per_person}</strong>
+                <strong>{formatPoolPrice(pool)}</strong>
               </div>
               <div>
                 <span>Phone</span>
@@ -296,6 +297,9 @@ export default function PoolDetailPage({ params }: { params: Promise<{ id: strin
               <h3 style={{ margin: "0 0 6px", display: "flex", alignItems: "center", gap: 6, color: "var(--teal)" }}>
                 <span>💰</span> Trip Split & Savings
               </h3>
+              {pool.pricing_mode === "split_equally" ? (
+                <p className="helper">Split equally: divide the final fare by the number of people who travel, including the host. The amount is agreed after the trip; empty seats are not included. Comyvo does not collect payments.</p>
+              ) : (<>
               <p style={{ margin: "0 0 14px", fontSize: "0.78rem", color: "var(--muted)", lineHeight: 1.4 }}>
                 Estimated transit split and student savings.
               </p>
@@ -303,7 +307,7 @@ export default function PoolDetailPage({ params }: { params: Promise<{ id: strin
               <div style={{ display: "grid", gap: 10, fontSize: "0.85rem", marginBottom: 14 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", color: "var(--muted)" }}>
                   <span>Total Vehicle Cost:</span>
-                    <strong>₹{pool.cost_per_person * pool.total_seats}</strong>
+                    <strong>₹{(pool.cost_per_person ?? 0) * pool.total_seats}</strong>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", color: "var(--ink)" }}>
                   <span>Your Carpool Share:</span>
@@ -313,13 +317,13 @@ export default function PoolDetailPage({ params }: { params: Promise<{ id: strin
                 <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700 }}>
                   <span>Solo Travel Cost:</span>
                   <span style={{ color: "var(--red)" }}>
-                    ₹{pool.cost_per_person * pool.total_seats}
+                    ₹{(pool.cost_per_person ?? 0) * pool.total_seats}
                   </span>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700 }}>
                   <span>Your Net Savings:</span>
                   <span style={{ color: "var(--mint)" }}>
-                    ₹{Math.max(0, (pool.cost_per_person * pool.total_seats) - pool.cost_per_person)}
+                    ₹{Math.max(0, ((pool.cost_per_person ?? 0) * pool.total_seats) - (pool.cost_per_person ?? 0))}
                   </span>
                 </div>
               </div>
@@ -335,6 +339,7 @@ export default function PoolDetailPage({ params }: { params: Promise<{ id: strin
               }}>
                 By split-sharing this {pool.car_type || "ride"} instead of travelling solo, you save approximately <strong>{Math.round((1 - 1 / pool.total_seats) * 100)}%</strong> of the fare.
               </div>
+              </>)}
             </div>
           </div>
         </div>

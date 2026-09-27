@@ -31,6 +31,16 @@ export const profileSchema = z.object({
   year_of_joining: z.coerce.number().int().min(1990).max(new Date().getFullYear() + 1).nullable().optional(),
 }).strict();
 
+const costAmount = z.preprocess((value) => value === "" ? undefined : value, z.coerce.number().min(0).max(10000)).nullable();
+export const poolPricingSchema = z.object({
+  pricing_mode: z.enum(["fixed", "split_equally"]).default("fixed"),
+  cost_per_person: costAmount.optional(),
+}).superRefine((pool, context) => {
+  if (pool.pricing_mode === "fixed" && pool.cost_per_person == null) {
+    context.addIssue({ code: "custom", path: ["cost_per_person"], message: "Enter a fixed amount per person or choose Split equally." });
+  }
+}).transform((pool) => ({ ...pool, cost_per_person: pool.pricing_mode === "split_equally" ? null : pool.cost_per_person! }));
+
 const poolFields = {
   from_location: cleanText(2, 120),
   to_location: cleanText(2, 120),
@@ -38,7 +48,8 @@ const poolFields = {
   car_type: z.enum(["auto", "sedan", "suv"]),
   departure_at: z.string().datetime({ offset: true }),
   total_seats: z.coerce.number().int().min(2).max(8),
-  cost_per_person: z.coerce.number().min(0).max(10000),
+  pricing_mode: z.enum(["fixed", "split_equally"]).default("fixed"),
+  cost_per_person: costAmount.optional(),
   notes: optionalText(1000),
   campus: z.enum(CAMPUSES),
   luggage_capacity: z.enum(["any", "backpacks", "trolleys"]),
@@ -47,6 +58,10 @@ const poolFields = {
 };
 
 export const createPoolSchema = z.object(poolFields).strict().superRefine((pool, context) => {
+  const pricing = poolPricingSchema.safeParse(pool);
+  if (!pricing.success) for (const issue of pricing.error.issues) {
+    context.addIssue({ code: "custom", path: issue.path, message: issue.message });
+  }
   if (Date.parse(pool.departure_at) < Date.now() + 15 * 60_000) {
     context.addIssue({ code: "custom", path: ["departure_at"], message: "Departure must be at least 15 minutes from now." });
   }
@@ -54,22 +69,21 @@ export const createPoolSchema = z.object(poolFields).strict().superRefine((pool,
   if (pool.total_seats !== vehicleCapacity) {
     context.addIssue({ code: "custom", path: ["total_seats"], message: `Seat capacity for ${pool.car_type} must be ${vehicleCapacity}.` });
   }
-});
+}).transform((pool) => ({ ...pool, cost_per_person: pool.pricing_mode === "split_equally" ? null : pool.cost_per_person! }));
 
 export const updatePoolSchema = z.object({
   from_location: cleanText(2, 120).optional(),
   to_location: cleanText(2, 120).optional(),
   via_route: optionalText(240),
-  car_type: z.enum(["auto", "sedan", "suv"]).optional(),
   departure_at: z.string().datetime({ offset: true }).optional(),
-  total_seats: z.coerce.number().int().min(2).max(8).optional(),
-  cost_per_person: z.coerce.number().min(0).max(10000).optional(),
+  pricing_mode: z.enum(["fixed", "split_equally"]).optional(),
+  cost_per_person: costAmount.optional(),
   notes: optionalText(1000),
   campus: z.enum(CAMPUSES).optional(),
   luggage_capacity: z.enum(["any", "backpacks", "trolleys"]).optional(),
   women_only: z.boolean().optional(),
   contact_visibility: z.enum(["always", "premium_only", "after_join"]).optional(),
-  status: z.enum(["active", "cancelled", "completed"]).optional(),
+  status: z.enum(["cancelled", "completed"]).optional(),
 }).strict().refine((value) => Object.keys(value).length > 0, "Provide at least one field to update.");
 
 export const joinPoolSchema = z.object({ seat_no: z.coerce.number().int().min(2).max(8) }).strict();
@@ -95,3 +109,4 @@ export const phoneVerifySchema = phoneRequestSchema.extend({
 });
 
 export const premiumRequestSchema = z.object({ note: optionalText(500) }).strict();
+export const deleteAccountSchema = z.object({ confirmation: z.literal("DELETE") }).strict();

@@ -4,6 +4,7 @@ import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@/components/ui/Toast";
 import { Skeleton } from "@/components/ui/Skeleton";
+import CostFields from "@/components/pools/CostFields";
 
 const CAMPUSES = ["Coimbatore", "Chennai", "Bengaluru", "Kochi", "Mysuru", "Amritapuri"];
 
@@ -19,6 +20,7 @@ export default function EditPoolPage({ params }: { params: Promise<{ id: string 
     departure_at: "",
     total_seats: "",
     cost_per_person: "",
+    pricing_mode: "fixed",
     notes: "",
     campus: "",
     luggage_capacity: "any",
@@ -53,7 +55,8 @@ export default function EditPoolPage({ params }: { params: Promise<{ id: string 
         via_route: data.via_route ?? "",
         departure_at: formattedDate,
         total_seats: String(data.total_seats),
-        cost_per_person: String(data.cost_per_person),
+        cost_per_person: data.cost_per_person == null ? "" : String(data.cost_per_person),
+        pricing_mode: data.pricing_mode ?? "fixed",
         notes: data.notes ?? "",
         campus: data.campus ?? "Coimbatore",
         luggage_capacity: data.luggage_capacity ?? "any",
@@ -82,10 +85,18 @@ export default function EditPoolPage({ params }: { params: Promise<{ id: string 
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        ...form,
+        from_location: form.from_location,
+        to_location: form.to_location,
+        via_route: form.via_route,
         departure_at: new Date(form.departure_at).toISOString(),
-        total_seats: Number(form.total_seats),
-        cost_per_person: Number(form.cost_per_person),
+        cost_per_person: form.pricing_mode === "split_equally" ? null : Number(form.cost_per_person),
+        pricing_mode: form.pricing_mode,
+        notes: form.notes,
+        campus: form.campus,
+        luggage_capacity: form.luggage_capacity,
+        women_only: form.women_only,
+        contact_visibility: form.contact_visibility,
+        ...(form.status === "cancelled" || form.status === "completed" ? { status: form.status } : {}),
       }),
     });
     const data = await res.json();
@@ -153,10 +164,7 @@ export default function EditPoolPage({ params }: { params: Promise<{ id: string 
                 <span>Total seats</span>
                 <input id="total_seats" name="total_seats" type="number" min="2" max="8" value={form.total_seats} readOnly style={{ background: "var(--panel-soft)", color: "var(--muted)", cursor: "not-allowed" }} />
               </label>
-              <label>
-                <span>Cost per person (₹)</span>
-                <input id="cost_per_person" name="cost_per_person" type="number" min="0" value={form.cost_per_person} onChange={handleChange} />
-              </label>
+              <CostFields mode={form.pricing_mode} cost={form.cost_per_person} onChange={handleChange} />
               <label>
                 <span>Campus</span>
                 <select id="campus" name="campus" value={form.campus} onChange={handleChange}>
