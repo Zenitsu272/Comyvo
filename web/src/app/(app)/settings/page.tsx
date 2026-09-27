@@ -19,6 +19,7 @@ interface Profile {
   roll_number: string | null;
   phone: string | null;
   is_phone_verified: boolean;
+  phone_verification_enabled: boolean;
   department: string | null;
   campus: string | null;
   gender: string | null;
@@ -69,7 +70,15 @@ export default function SettingsPage() {
     const res = await fetch("/api/me", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(profile),
+      body: JSON.stringify({
+        full_name: profile.full_name,
+        roll_number: profile.roll_number,
+        phone: profile.phone,
+        department: profile.department,
+        campus: profile.campus,
+        gender: profile.gender,
+        year_of_joining: profile.year_of_joining,
+      }),
     });
     const data = await res.json();
     setSaving(false);
@@ -232,7 +241,9 @@ export default function SettingsPage() {
             <div style={{ padding: 24, border: "1.5px solid var(--line)", borderRadius: 18, background: "#fff" }}>
               <p className="kicker">Trust & safety</p>
               <h3 style={{ fontSize: "1.1rem", margin: "6px 0 10px" }}>Phone status</h3>
-              {profile.phone ? (
+              {!profile.phone_verification_enabled ? (
+                <p className="helper">Your account uses college email verification. Phone numbers are optional contact details; SMS verification is not available.</p>
+              ) : profile.phone ? (
                 profile.is_phone_verified ? (
                   <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                     <span className="trust trust-verified" style={{ alignSelf: "flex-start", gap: 6, display: "inline-flex", alignItems: "center" }}>

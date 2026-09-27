@@ -12,6 +12,7 @@ type ServerEnvironment = {
   twilioAuthToken?: string;
   twilioVerifyServiceSid?: string;
   localPhoneOtp?: string;
+  phoneVerificationEnabled: boolean;
   otpDelivery: "resend" | "smtp" | "supabase";
   smtpHost?: string;
   smtpPort: number;
@@ -69,6 +70,7 @@ export function getServerEnvironment(): ServerEnvironment {
     twilioAuthToken: process.env.TWILIO_AUTH_TOKEN,
     twilioVerifyServiceSid: process.env.TWILIO_VERIFY_SERVICE_SID,
     localPhoneOtp: process.env.LOCAL_PHONE_OTP,
+    phoneVerificationEnabled: process.env.PHONE_VERIFICATION_ENABLED === "true",
     otpDelivery: otpDelivery as ServerEnvironment["otpDelivery"],
     smtpHost: process.env.SMTP_HOST,
     smtpPort,
@@ -88,7 +90,7 @@ export function assertProductionEnvironment(): void {
     : !env.resendApiKey)) {
     throw new Error("EMAIL_FROM and credentials for the selected email provider are required in production.");
   }
-  if (!env.twilioAccountSid || !env.twilioAuthToken || !env.twilioVerifyServiceSid) {
+  if (env.phoneVerificationEnabled && (!env.twilioAccountSid || !env.twilioAuthToken || !env.twilioVerifyServiceSid)) {
     throw new Error("TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and TWILIO_VERIFY_SERVICE_SID are required in production.");
   }
   if (env.localPhoneOtp) throw new Error("LOCAL_PHONE_OTP must never be configured in production.");

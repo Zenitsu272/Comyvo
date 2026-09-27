@@ -103,7 +103,7 @@ function SignupForm() {
                 name="full_name"
                 value={form.full_name}
                 onChange={handleChange}
-                placeholder="Vaishak N"
+                placeholder="Your name"
                 required
                 autoFocus
               />
@@ -118,7 +118,7 @@ function SignupForm() {
                 name="roll_number"
                 value={form.roll_number}
                 onChange={handleChange}
-                placeholder="CB.EN.U4CCE24130"
+                placeholder="CB.EN.U4CCE24156"
                 required
                 style={prefillRoll ? { borderColor: "rgba(11,143,111,0.4)", background: "#f8fefb" } : {}}
               />
@@ -193,7 +193,7 @@ function SignupForm() {
           </div>
 
           <p className="helper">
-            Skipping phone keeps your number unverified on pools. You can verify it later from your profile.
+            Your college email verifies your account. A phone number is optional for coordinating rides and is not verified by email.
           </p>
 
           <button type="submit" className="btn-solid btn btn-wide btn-lg" disabled={loading}>

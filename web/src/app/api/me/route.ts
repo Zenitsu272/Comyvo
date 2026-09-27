@@ -3,11 +3,12 @@ import { assertSameOrigin, enforceRateLimit, handleApiError, parseJson, profileC
 import { deleteAccountSchema, profileSchema } from "@/lib/validation";
 import { decodeAmritaEmail } from "@/lib/auth";
 import { escapeHtml, sendEmail } from "@/lib/email";
+import { getServerEnvironment } from "@/lib/env";
 
 export async function GET() {
   try {
     const { profile } = await requireUser();
-    return NextResponse.json({ ...profile, profile_complete: profileComplete(profile) });
+    return NextResponse.json({ ...profile, profile_complete: profileComplete(profile), phone_verification_enabled: getServerEnvironment().phoneVerificationEnabled });
   } catch (error) {
     return handleApiError(error);
   }

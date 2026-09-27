@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Modal from "@/components/ui/Modal";
 import { formatDeparture, timeUntil, isDepartingSoon, cn } from "@/lib/utils";
+import { formatPoolPrice } from "@/lib/pricing";
 
 export interface Pool {
   id: string;
@@ -12,7 +13,8 @@ export interface Pool {
   departure_at: string;
   total_seats: number;
   available_seats: number;
-  cost_per_person: number;
+  cost_per_person: number | null;
+  pricing_mode: "fixed" | "split_equally";
   notes: string | null;
   via_route?: string | null;
   luggage_capacity?: string;
@@ -140,7 +142,7 @@ export default function PoolCard({ pool, onLeave }: PoolCardProps) {
           </div>
           <div>
             <span>Cost</span>
-            <strong>₹{pool.cost_per_person}</strong>
+            <strong>{formatPoolPrice(pool)}</strong>
           </div>
           <div>
             <span>Phone</span>

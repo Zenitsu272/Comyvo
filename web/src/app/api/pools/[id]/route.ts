@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { ApiError, assertSameOrigin, enforceRateLimit, handleApiError, parseJson, requireUser } from "@/lib/api";
-import { updatePoolSchema } from "@/lib/validation";
+import { poolPricingSchema, updatePoolSchema } from "@/lib/validation";
 import { escapeHtml, sendEmail } from "@/lib/email";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -73,8 +73,11 @@ export async function PUT(request: Request, { params }: Params) {
     if (updates.status === "completed" && new Date(current.departure_at).getTime() > Date.now()) {
       throw new ApiError(409, "A pool can only be completed after its departure time.");
     }
+    const pricing = poolPricingSchema.safeParse({ ...current, ...updates });
+    if (!pricing.success) throw new ApiError(400, pricing.error.issues[0].message);
     const { data, error } = await admin.from("pools").update({
       ...updates,
+      ...pricing.data,
     }).eq("id", id).eq("host_id", user.id).select().single();
     if (error) throw error;
     if (updates.status === "cancelled" && current.status !== "cancelled") await notifyCancellation(admin, id, data);

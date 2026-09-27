@@ -80,7 +80,7 @@ npm run e2e:local --prefix web
    ```
 
 2. In Supabase Auth, set the production Site URL and add `https://YOUR_DOMAIN/auth/callback` to redirect URLs. Set email OTP length to six digits and expiry to 10 minutes. Comyvo sends OTPs through Resend directly. If choosing `OTP_DELIVERY=supabase` instead, configure Supabase's custom SMTP and both confirmation and magic-link templates to include `{{ .Token }}`.
-3. Verify a sending domain in Resend and create an API key. Create a Twilio Verify Service for SMS verification.
+3. Configure Resend with a verified sending domain, or an authenticated SMTP sender such as Brevo. For the email-only launch set `PHONE_VERIFICATION_ENABLED=false`; Twilio is not required. To enable optional SMS later, set it to `true` and configure a Twilio Verify Service.
 4. Deploy the repository to Vercel with `web` as the Root Directory and configure the required values documented in `web/.env.example` in Production and Preview. Do not set `LOCAL_PHONE_OTP` in deployed environments. Never expose the Supabase secret key, Twilio token, or Resend key through a `NEXT_PUBLIC_` variable.
 5. After an owner signs in once, bootstrap the first administrator from a trusted machine:
 
@@ -88,7 +88,7 @@ npm run e2e:local --prefix web
    npm run bootstrap:admin --prefix web -- owner@amrita.edu
    ```
 
-6. Confirm `https://YOUR_DOMAIN/api/health` returns `{"status":"ok"}`, then test email OTP, phone OTP, pool creation, concurrent seat joins, cancellation email, reporting, and admin review using real accounts.
+6. Confirm `https://YOUR_DOMAIN/api/health` returns `{"status":"ok"}`, then test email OTP, pool creation, concurrent seat joins, cancellation email, reporting, and admin review using real accounts. Test phone OTP only if explicitly enabled.
 
 The local end-to-end command requires the local Supabase stack and Next.js development server to be running with `OTP_DELIVERY=supabase`. It refuses to target non-local URLs, delivers OTP mail through Mailpit, and removes its temporary accounts after completion. Switch back to `OTP_DELIVERY=resend` for real delivery.
 
@@ -101,7 +101,7 @@ Provide them only through the deployment platform's encrypted environment-variab
 - Production domain.
 - Supabase project URL, publishable key, secret key, project reference, and database password/access needed to apply migrations.
 - Resend API key and verified sender address.
-- Twilio Account SID, Auth Token, and Verify Service SID.
+- Twilio Account SID, Auth Token, and Verify Service SID only if SMS verification is enabled.
 - Vercel project/team access (or connect the GitHub repository yourself and use `web` as its root directory).
 
 ## Data model

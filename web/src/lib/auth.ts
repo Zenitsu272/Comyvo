@@ -1,7 +1,7 @@
 // ============================================================
 // Amrita Student Email Decoder
 // Format: (campus).(course).U(prog)(dept)(yy)(roll)@(campus).students.amrita.edu
-// Example: cb.en.u4cce24130@cb.students.amrita.edu
+// Example: cb.en.u4cce24156@cb.students.amrita.edu
 // ============================================================
 
 // ── Campus map ───────────────────────────────────────────
@@ -78,7 +78,7 @@ export interface DecodedStudent {
   departmentCode: string | null;
   yearOfJoining: number | null;
   rollNumber: string | null;        // e.g. "130"
-  fullRollNumber: string | null;    // e.g. "CB.EN.U4CCE24130"
+  fullRollNumber: string | null;    // e.g. "CB.EN.U4CCE24156"
   batchLabel: string | null;        // e.g. "2024 – 2028"
 }
 
@@ -102,7 +102,7 @@ export function decodeAmritaEmail(email: string): DecodedStudent {
   // Extract local part (before @)
   const local = email.split("@")[0].toLowerCase().trim();
 
-  // Split by dots: ["cb", "en", "u4cce24130"]
+  // Split by dots: ["cb", "en", "u4cce24156"]
   const parts = local.split(".");
   if (parts.length < 3) return empty;
 
@@ -115,7 +115,7 @@ export function decodeAmritaEmail(email: string): DecodedStudent {
   const course = COURSE_MAP[courseCode] ?? null;
 
   // ── Program + Dept + Year + Roll from rolePart ────────────
-  // Format: u4cce24130  or  u4cse24056
+  // Format: u4cce24156  or  u4cse24056
   //         u4 + dept + 2-digit-year + roll
   // The program prefix is: u4 / u5 / u6 / p2 / p3 / r
   const programMatch = rolePart.match(/^([a-z]\d|[a-z])/);
@@ -141,7 +141,7 @@ export function decodeAmritaEmail(email: string): DecodedStudent {
   const duration = progCode === "u5" || progCode === "u6" ? 5 : progCode === "p2" ? 2 : 4;
   const batchLabel = `${yearOfJoining} – ${yearOfJoining + duration}`;
 
-  // Build full roll number in standard format: CB.EN.U4CCE24130
+  // Build full roll number in standard format: CB.EN.U4CCE24156
   const fullRollNumber = [
     campusCode.toUpperCase(),
     courseCode.toUpperCase(),
@@ -192,7 +192,7 @@ export function isAllowedEmail(email: string): boolean {
 export function getDomainError(email: string): string | null {
   if (!email.includes("@")) return "Enter a valid email address.";
   if (!isAllowedEmail(email))
-    return "Only Amrita college email addresses are allowed (e.g. cb.en.u4cce24130@cb.students.amrita.edu).";
+    return "Only Amrita college email addresses are allowed (e.g. cb.en.u4cce24156@cb.students.amrita.edu).";
   return null;
 }
 

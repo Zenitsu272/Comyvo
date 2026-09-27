@@ -105,7 +105,7 @@ function LoginForm() {
                   type="email"
                   value={email}
                   onChange={(e) => { setEmail(e.target.value); setEmailError(null); }}
-                  placeholder="cb.en.u4cce24130@cb.students.amrita.edu"
+                  placeholder="cb.en.u4cce24156@cb.students.amrita.edu"
                   required
                   autoFocus
                   autoComplete="email"
@@ -119,7 +119,7 @@ function LoginForm() {
 
               <p className="helper" style={{ fontSize: "0.78rem" }}>
                 <span style={{ color: "var(--teal)", fontWeight: 700 }}>Only Amrita emails accepted — </span>
-                e.g. cb.en.u4cce24130@cb.students.amrita.edu
+                e.g. cb.en.u4cce24156@cb.students.amrita.edu
               </p>
 
               <button

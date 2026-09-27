@@ -1,5 +1,12 @@
 import "server-only";
 import { getServerEnvironment } from "@/lib/env";
+import { ApiError } from "@/lib/api";
+
+function assertPhoneEnabled() {
+  if (!getServerEnvironment().phoneVerificationEnabled) {
+    throw new ApiError(503, "Phone verification is not available. Sign in using your college email.");
+  }
+}
 
 function twilioConfiguration() {
   const env = getServerEnvironment();
@@ -39,6 +46,7 @@ export function indianPhone(phone: string): string {
 }
 
 export async function sendPhoneCode(phone: string): Promise<{ developmentCode?: string }> {
+  assertPhoneEnabled();
   const developmentCode = localDevelopmentCode();
   if (developmentCode) return { developmentCode };
   await twilioRequest("Verifications", new URLSearchParams({ To: indianPhone(phone), Channel: "sms" }));
@@ -46,6 +54,7 @@ export async function sendPhoneCode(phone: string): Promise<{ developmentCode?: 
 }
 
 export async function verifyPhoneCode(phone: string, code: string): Promise<boolean> {
+  assertPhoneEnabled();
   const developmentCode = localDevelopmentCode();
   if (developmentCode) return code === developmentCode;
   const data = await twilioRequest("VerificationCheck", new URLSearchParams({ To: indianPhone(phone), Code: code }));

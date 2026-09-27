@@ -29,9 +29,12 @@ export async function sendEmail(input: { to: string; subject: string; html: stri
     try {
       const result = await transport.sendMail({ from: env.emailFrom, ...input });
       if (!result.accepted?.length || result.rejected?.length) throw new Error("SMTP recipient rejected.");
-    } catch {
+    } catch (error) {
       // Provider diagnostics can contain recipient addresses; do not surface them.
-      throw new Error("SMTP delivery failed. Check the sender credentials and provider settings.");
+      const failure = error as { code?: unknown; responseCode?: unknown };
+      const code = typeof failure?.code === "string" && /^[A-Z]{2,20}$/.test(failure.code) ? failure.code : "UNKNOWN";
+      const status = typeof failure?.responseCode === "number" ? failure.responseCode : "unknown";
+      throw new Error(`SMTP delivery failed (${code}, status ${status}). Check the sender credentials and provider settings.`);
     } finally {
       transport.close();
     }
