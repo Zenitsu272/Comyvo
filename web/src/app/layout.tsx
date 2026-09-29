@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { isTemporaryLoginEnabled } from "@/lib/login-mode";
 import "@/styles/globals.css";
 import "@/styles/layout.css";
 import "@/styles/components.css";
@@ -28,7 +29,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        {isTemporaryLoginEnabled() && <aside role="status" style={{ background: "#fff3cd", color: "#664d03", padding: "10px 16px", textAlign: "center", fontSize: 14 }}>Temporary demo mode: email identities are not verified. Do not share sensitive information.</aside>}
+        {children}
+      </body>
     </html>
   );
 }

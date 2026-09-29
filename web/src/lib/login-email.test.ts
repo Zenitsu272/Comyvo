@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   env: { otpDelivery: "resend", resendApiKey: "re_test", emailFrom: "Comyvo <login@example.com>", siteUrl: "http://127.0.0.1:3000", supabaseUrl: "http://127.0.0.1:55421" },
@@ -17,10 +17,22 @@ import { sendLoginEmail } from "./login-email";
 describe("login email delivery", () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    vi.stubEnv("TEMPORARY_LOGIN_ENABLED", "false");
     mocks.env.otpDelivery = "resend";
     mocks.env.resendApiKey = "re_test";
     mocks.generateLink.mockResolvedValue({ data: { properties: { email_otp: "123456" } }, error: null });
     mocks.sendEmail.mockResolvedValue(undefined);
+  });
+
+  afterEach(() => vi.unstubAllEnvs());
+
+  it("sends no email or OTP in explicitly enabled temporary mode", async () => {
+    vi.stubEnv("TEMPORARY_LOGIN_ENABLED", "true");
+    mocks.env.resendApiKey = "";
+    await expect(sendLoginEmail("student@amrita.edu")).resolves.toBe("temporary_code");
+    expect(mocks.sendEmail).not.toHaveBeenCalled();
+    expect(mocks.generateLink).not.toHaveBeenCalled();
+    expect(mocks.signInWithOtp).not.toHaveBeenCalled();
   });
 
   it("sends the Supabase code through Resend without returning the code", async () => {

@@ -5,6 +5,7 @@ import { assertProductionEnvironment, getServerEnvironment } from "@/lib/env";
 describe("email-only production configuration", () => {
   beforeEach(() => {
     vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("TEMPORARY_LOGIN_ENABLED", "false");
     vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://comyvo.example");
     vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://example.supabase.co");
     vi.stubEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", "test-public");
@@ -30,6 +31,11 @@ describe("email-only production configuration", () => {
   it("still requires email credentials", () => {
     vi.stubEnv("SMTP_PASSWORD", "");
     expect(assertProductionEnvironment).toThrow(/email provider/);
+  });
+  it("allows the explicitly approved temporary mode without email credentials", () => {
+    vi.stubEnv("TEMPORARY_LOGIN_ENABLED", "true");
+    vi.stubEnv("SMTP_PASSWORD", "");
+    expect(assertProductionEnvironment).not.toThrow();
   });
   it("requires Twilio when phone verification is enabled", () => {
     vi.stubEnv("PHONE_VERIFICATION_ENABLED", "true");

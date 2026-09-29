@@ -1,4 +1,5 @@
 import "server-only";
+import { isTemporaryLoginEnabled } from "@/lib/login-mode";
 
 type ServerEnvironment = {
   siteUrl: string;
@@ -85,9 +86,9 @@ export function assertProductionEnvironment(): void {
   if (env.rateLimitSecret.length < 32) {
     throw new Error("RATE_LIMIT_SECRET must be at least 32 characters in production.");
   }
-  if (!env.emailFrom || (env.otpDelivery === "smtp"
+  if (!isTemporaryLoginEnabled() && (!env.emailFrom || (env.otpDelivery === "smtp"
     ? !env.smtpHost || !env.smtpUser || !env.smtpPassword
-    : !env.resendApiKey)) {
+    : !env.resendApiKey))) {
     throw new Error("EMAIL_FROM and credentials for the selected email provider are required in production.");
   }
   if (env.phoneVerificationEnabled && (!env.twilioAccountSid || !env.twilioAuthToken || !env.twilioVerifyServiceSid)) {

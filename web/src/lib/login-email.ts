@@ -3,8 +3,10 @@ import { ApiError } from "@/lib/api";
 import { getServerEnvironment } from "@/lib/env";
 import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { escapeHtml, sendEmail } from "@/lib/email";
+import { isTemporaryLoginEnabled } from "@/lib/login-mode";
 
-export async function sendLoginEmail(email: string): Promise<"email" | "local_inbox"> {
+export async function sendLoginEmail(email: string): Promise<"email" | "local_inbox" | "temporary_code"> {
+  if (isTemporaryLoginEnabled()) return "temporary_code";
   const env = getServerEnvironment();
   if (env.otpDelivery === "supabase") {
     const local = ["127.0.0.1", "localhost", "[::1]"].includes(new URL(env.supabaseUrl).hostname);

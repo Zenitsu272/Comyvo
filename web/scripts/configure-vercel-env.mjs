@@ -5,7 +5,8 @@ import { spawnSync } from "node:child_process";
 
 if (!process.argv.includes("--confirm-production")) throw new Error("Pass --confirm-production to configure the Comyvo Vercel project.");
 const env = parseEnv(readFileSync(".env.production.local", "utf8"));
-const names = ["NEXT_PUBLIC_SITE_URL", "NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", "SUPABASE_SECRET_KEY", "RATE_LIMIT_SECRET", "OTP_DELIVERY", "SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASSWORD", "EMAIL_FROM", "PHONE_VERIFICATION_ENABLED"];
+env.TEMPORARY_LOGIN_ENABLED ??= "false";
+const names = ["NEXT_PUBLIC_SITE_URL", "NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", "SUPABASE_SECRET_KEY", "RATE_LIMIT_SECRET", "OTP_DELIVERY", "SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASSWORD", "EMAIL_FROM", "PHONE_VERIFICATION_ENABLED", "TEMPORARY_LOGIN_ENABLED"];
 if (env.NEXT_PUBLIC_SITE_URL !== "https://comyvo.vercel.app" || env.NEXT_PUBLIC_SUPABASE_URL !== "https://rofjssxpgzgxmqirdlfy.supabase.co") throw new Error("Unexpected production target.");
 if (env.LOCAL_PHONE_OTP || env.PHONE_VERIFICATION_ENABLED !== "false") throw new Error("Expected email-only production configuration.");
 for (const name of names) {

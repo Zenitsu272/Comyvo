@@ -29,6 +29,12 @@ Use the local Supabase output to replace the URL and keys in `web/.env.local`. O
 
 ## Real OTP email delivery
 
+### Temporary demo sign-in (not email verification)
+
+Set `TEMPORARY_LOGIN_ENABLED=true` to accept an Amrita email followed by `123456`, without sending an email. This is an explicitly opt-in demo mode, including on Vercel Production. Anyone knowing a student email can access that account. Admin and suspended accounts cannot use this path. Rate limits, domain validation, and normal Supabase sessions remain in place; the shared code provides no identity assurance.
+
+Set `TEMPORARY_LOGIN_ENABLED=false` and redeploy to restore real OTP delivery (keep the email provider credentials configured). Existing sessions do not automatically expire when this switch changes: revoke demo-created sessions and review accounts before treating users as verified again. Do not use demo-mode data or self-declared identities for sensitive or trusted operations.
+
 ### Without a domain: Gmail SMTP
 
 Use a Gmail account with 2-Step Verification enabled. Create an app password at https://myaccount.google.com/apppasswords (some managed school/work accounts do not allow this). Put these values in the ignored `web/.env.local`, using the same Gmail address for `SMTP_USER` and `EMAIL_FROM`:
