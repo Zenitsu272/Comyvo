@@ -1,0 +1,3 @@
+Comyvo Git merge-conflict demonstration
+Pickup point: Main Gate
+This file is for Git practice only; it does not configure the app.
